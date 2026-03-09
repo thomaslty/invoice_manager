@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import fontsRouter from './fonts.js';
 
 const router = Router();
 
-// Register route modules here
+router.use('/fonts', fontsRouter);
 
 export default router;
