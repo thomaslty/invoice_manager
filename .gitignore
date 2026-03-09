@@ -11,3 +11,9 @@ template/*
 
 # OS files
 .DS_Store
+
+# Uploaded files (keep directories via .gitkeep)
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/fonts/*
+!backend/fonts/.gitkeep
