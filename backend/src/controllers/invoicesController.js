@@ -1,4 +1,6 @@
 import * as invoiceService from '../services/invoiceService.js';
+import * as pdfService from '../services/pdfService.js';
+import * as previewService from '../services/previewService.js';
 
 export async function list(req, res) {
   const { search, sort_by, sort_order, date_from, date_to } = req.query;
@@ -35,4 +37,20 @@ export async function remove(req, res) {
   const invoice = await invoiceService.deleteInvoice(Number(req.params.id));
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   res.json({ success: true });
+}
+
+export async function downloadPdf(req, res) {
+  const invoice = await invoiceService.getInvoiceById(Number(req.params.id));
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const html = await previewService.generatePreviewHtml(invoice.jsonData, invoice.fontId, baseUrl);
+  const pdfBuffer = await pdfService.generatePdf(html);
+
+  const filename = `invoice-${invoice.refNo || invoice.id}.pdf`;
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+  });
+  res.send(pdfBuffer);
 }

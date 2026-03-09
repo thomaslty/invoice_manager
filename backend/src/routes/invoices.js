@@ -4,6 +4,7 @@ import * as invoicesController from '../controllers/invoicesController.js';
 const router = Router();
 
 router.get('/', invoicesController.list);
+router.get('/:id/pdf', invoicesController.downloadPdf);
 router.get('/:id', invoicesController.getById);
 router.post('/', invoicesController.create);
 router.put('/:id', invoicesController.update);
