@@ -48,6 +48,7 @@ import {
   TrashIcon,
   HistoryIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import SnapshotList from "./SnapshotList";
 
 const SORTABLE_COLUMNS = [
@@ -164,8 +165,10 @@ export default function InvoiceTable() {
       setDeleteDialogOpen(false);
       setDeleteInvoiceId(null);
       fetchInvoices();
+      toast.success('Invoice deleted');
     } catch (err) {
       console.error("Failed to delete invoice:", err);
+      toast.error('Failed to delete invoice');
     } finally {
       setDeleting(false);
     }
@@ -179,8 +182,10 @@ export default function InvoiceTable() {
       setSnapshotDialogOpen(false);
       setSnapshotName("");
       setSnapshotInvoiceId(null);
+      toast.success('Snapshot saved');
     } catch (err) {
       console.error("Failed to save snapshot:", err);
+      toast.error('Failed to save snapshot');
     } finally {
       setSavingSnapshot(false);
     }

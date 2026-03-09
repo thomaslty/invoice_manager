@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import FontCard from "@/components/fonts/FontCard";
 import FontUploadDialog from "@/components/fonts/FontUploadDialog";
+import { toast } from "sonner";
 
 export default function FontManagementPage() {
   const [fonts, setFonts] = useState([]);
@@ -34,13 +35,16 @@ export default function FontManagementPage() {
     try {
       await api.deleteFont(font.id);
       fetchFonts();
+      toast.success('Font deleted');
     } catch (err) {
       console.error("Failed to delete font:", err);
+      toast.error('Failed to delete font');
     }
   };
 
   const handleFontAdded = () => {
     fetchFonts();
+    toast.success('Font added');
   };
 
   return (

@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import TemplateCard from "@/components/templates/TemplateCard";
+import { toast } from "sonner";
 
 export default function TemplateListPage() {
   const navigate = useNavigate();
@@ -33,8 +34,10 @@ export default function TemplateListPage() {
         jsonData: template.jsonData,
       });
       fetchTemplates();
+      toast.success('Template duplicated');
     } catch (err) {
       console.error("Failed to duplicate template:", err);
+      toast.error('Failed to duplicate template');
     }
   };
 
@@ -42,8 +45,10 @@ export default function TemplateListPage() {
     try {
       await api.deleteTemplate(id);
       fetchTemplates();
+      toast.success('Template deleted');
     } catch (err) {
       console.error("Failed to delete template:", err);
+      toast.error('Failed to delete template');
     }
   };
 

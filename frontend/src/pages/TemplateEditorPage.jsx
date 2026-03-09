@@ -7,6 +7,7 @@ import InvoiceForm from '@/components/invoice/InvoiceForm';
 import InvoicePreview from '@/components/invoice/InvoicePreview';
 import { api } from '@/lib/api';
 import { Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function TemplateEditorPage() {
   const { id } = useParams();
@@ -79,8 +80,10 @@ export default function TemplateEditorPage() {
         const result = await api.createTemplate(payload);
         navigate(`/templates/${result.id}/edit`, { replace: true });
       }
+      toast.success('Template saved');
     } catch (err) {
       console.error('Save failed:', err);
+      toast.error('Failed to save template');
     } finally {
       setSaving(false);
     }

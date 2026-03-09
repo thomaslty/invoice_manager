@@ -7,6 +7,7 @@ import InvoiceForm from '@/components/invoice/InvoiceForm';
 import InvoicePreview from '@/components/invoice/InvoicePreview';
 import { api } from '@/lib/api';
 import { Save, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function InvoiceEditorPage() {
   const { id } = useParams();
@@ -81,8 +82,10 @@ export default function InvoiceEditorPage() {
         const result = await api.createInvoice({ jsonData: formData, fontId });
         navigate(`/invoices/${result.id}/edit`, { replace: true });
       }
+      toast.success('Invoice saved');
     } catch (err) {
       console.error('Save failed:', err);
+      toast.error('Failed to save invoice');
     } finally {
       setSaving(false);
     }

@@ -20,6 +20,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { CopyIcon, TrashIcon, InboxIcon } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SnapshotList({ invoiceId, open, onOpenChange }) {
   const navigate = useNavigate();
@@ -54,9 +55,11 @@ export default function SnapshotList({ invoiceId, open, onOpenChange }) {
     try {
       const newInvoice = await api.cloneSnapshot(snapshotId);
       onOpenChange(false);
+      toast.success('Invoice created from snapshot');
       navigate(`/invoices/${newInvoice.id}/edit`);
     } catch (err) {
       console.error("Failed to clone snapshot:", err);
+      toast.error('Failed to clone snapshot');
     } finally {
       setCloning(null);
     }
@@ -70,8 +73,10 @@ export default function SnapshotList({ invoiceId, open, onOpenChange }) {
       setDeleteDialogOpen(false);
       setDeleteId(null);
       fetchSnapshots();
+      toast.success('Snapshot deleted');
     } catch (err) {
       console.error("Failed to delete snapshot:", err);
+      toast.error('Failed to delete snapshot');
     } finally {
       setDeleting(false);
     }
