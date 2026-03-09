@@ -1,21 +1,27 @@
-import { Button } from "@/components/ui/button"
+import { Routes, Route } from 'react-router-dom'
+import AppLayout from '@/components/layout/AppLayout'
+import DashboardPage from '@/pages/DashboardPage'
+import TemplateListPage from '@/pages/TemplateListPage'
+import InvoiceEditorPage from '@/pages/InvoiceEditorPage'
+import TemplateEditorPage from '@/pages/TemplateEditorPage'
+import FontManagementPage from '@/pages/FontManagementPage'
+import { Toaster } from '@/components/ui/sonner'
 
-export function App() {
+export default function App() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/templates" element={<TemplateListPage />} />
+          <Route path="/templates/new" element={<TemplateEditorPage />} />
+          <Route path="/templates/:id/edit" element={<TemplateEditorPage />} />
+          <Route path="/invoices/new" element={<InvoiceEditorPage />} />
+          <Route path="/invoices/:id/edit" element={<InvoiceEditorPage />} />
+          <Route path="/fonts" element={<FontManagementPage />} />
+        </Route>
+      </Routes>
+      <Toaster />
+    </>
   )
 }
-
-export default App
