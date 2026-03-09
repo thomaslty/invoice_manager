@@ -6,5 +6,8 @@ dist/
 # real invoices
 template/
 
+# Python
+.venv/
+
 # OS files
 .DS_Store
