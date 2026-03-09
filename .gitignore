@@ -4,7 +4,7 @@ dist/
 *.log
 
 # real invoices
-template/
+template/*
 
 # Python
 .venv/
