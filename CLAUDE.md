@@ -78,3 +78,13 @@ Three core concepts sharing the same JSON schema (`json_data` column):
 The JSON shape has 7 toggleable sections: `header`, `metadata`, `items`, `paymentMethod`, `terms`, `signature`, `footer`. See `docs/plans/2026-03-09-invoice-manager-design.md` for the full schema.
 
 FK ON DELETE policies: snapshots cascade on invoice delete, template_id and font_id set null on delete.
+
+## Verification
+
+- **Playwright MCP** is available — use it to verify frontend changes (navigate pages, evaluate DOM, check computed styles, take screenshots)
+- After CSS/layout changes, evaluate computed heights and overflow properties to confirm the fix works
+
+## Gotchas
+
+- **Flex height chains**: In nested flex-col containers, every level needs `min-h-0` to override the CSS default `min-height: auto` — otherwise children won't shrink below content size, breaking `overflow-hidden/auto`
+- **shadcn SidebarInset** has no height constraint by default (`min-h-svh` on wrapper, no max) — pass `className="h-svh overflow-hidden"` to bound it

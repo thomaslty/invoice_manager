@@ -24,7 +24,7 @@ export default function InvoicePreview({ formData, fontId }) {
   }, [formData, fontId]);
 
   return (
-    <div className="flex flex-col items-center bg-muted/50 p-6 overflow-auto h-full">
+    <div className="flex flex-col items-center bg-muted/50 p-6 overflow-hidden h-full">
       {loading && (
         <div className="text-xs text-muted-foreground mb-2">Updating preview...</div>
       )}

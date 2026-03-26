@@ -99,16 +99,16 @@ export default function InvoiceEditorPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-theme(spacing.12))] items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.12))] -m-6">
+    <div className="flex h-full -m-6">
       {/* Left panel — Editor */}
-      <div className="w-1/2 flex flex-col border-r border-border min-w-0">
+      <div className="w-1/2 flex flex-col border-r border-border min-w-0 min-h-0">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
           <h1 className="text-lg font-semibold truncate">
             {id ? 'Edit Invoice' : 'New Invoice'}
@@ -130,7 +130,7 @@ export default function InvoiceEditorPage() {
             )}
           </div>
         </div>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <InvoiceForm
             formData={formData}
             fontId={fontId}
