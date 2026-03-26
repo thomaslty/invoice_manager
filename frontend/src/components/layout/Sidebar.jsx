@@ -1,4 +1,4 @@
-import { FileText, LayoutTemplate, Type } from 'lucide-react'
+import { FileText, LayoutTemplate, Type, PanelLeft } from 'lucide-react'
 import { useLocation, Link } from 'react-router-dom'
 import {
   Sidebar,
@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar'
 
 const navItems = [
@@ -20,11 +21,22 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useLocation()
+  const { toggleSidebar } = useSidebar()
 
   return (
-    <Sidebar>
-      <SidebarHeader className="px-4 py-3">
-        <span className="text-lg font-semibold">Invoice Manager</span>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem className="flex flex-row items-center gap-2">
+            <span className="flex-1 truncate px-2 text-lg font-semibold group-data-[collapsible=icon]:hidden">Invoice Manager</span>
+            <SidebarMenuButton
+              onClick={toggleSidebar}
+              className="!size-8 !flex-none"
+            >
+              <PanelLeft />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
