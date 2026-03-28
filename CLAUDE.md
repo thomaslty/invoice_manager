@@ -22,6 +22,9 @@ cd backend && npm run db:seed       # seed default fonts
 # Frontend
 cd frontend && npm run build        # production build
 cd frontend && npm run lint         # ESLint
+
+# E2E tests (requires frontend + backend running)
+cd e2e && npx playwright test --config playwright.config.js
 ```
 
 ## Git Rules
@@ -59,6 +62,12 @@ Layered architecture: **Routes → Controllers → Services → DB**
 - `frontend/src/hooks/useInvoiceForm.js` — state management for the invoice editor
 - Vite proxy: `/api`, `/uploads`, `/fonts` → `http://localhost:3000`
 
+### E2E Tests: Playwright (in `e2e/`)
+
+- ESM package (`"type": "module"`) — `node_modules` is a symlink to `frontend/node_modules`
+- Tests run against `http://localhost:5173` — both frontend and backend must be running
+- Test files: `invoice-editor.spec.js` (7 tests), `fonts.spec.js` (3 tests)
+
 ### Core Data Flow: Preview & PDF
 
 Single source of truth: `backend/src/templates/invoice-html.js` renders a self-contained HTML string.
@@ -83,8 +92,17 @@ FK ON DELETE policies: snapshots cascade on invoice delete, template_id and font
 
 - **Playwright MCP** is available — use it to verify frontend changes (navigate pages, evaluate DOM, check computed styles, take screenshots)
 - After CSS/layout changes, evaluate computed heights and overflow properties to confirm the fix works
+- **E2E tests** — run after any frontend/backend change to catch regressions. Always add tests for new features.
 
 ## Gotchas
 
 - **Flex height chains**: In nested flex-col containers, every level needs `min-h-0` to override the CSS default `min-height: auto` — otherwise children won't shrink below content size, breaking `overflow-hidden/auto`
 - **shadcn SidebarInset** has no height constraint by default (`min-h-svh` on wrapper, no max) — pass `className="h-svh overflow-hidden"` to bound it
+- **Preview base URLs**: Preview uses empty `baseUrl` (relative `/uploads/...` resolved by Vite proxy). PDF uses Docker-internal `baseUrl`. Never mix them — browser can't reach `http://backend:3000`.
+- **Duplicate toasts in tests**: Actions like save-then-PDF produce multiple "Invoice saved" toasts. Use `.first()` in Playwright assertions.
+- **DnD kit IDs**: Items need stable `crypto.randomUUID()` IDs, not index-based keys. Use `CSS.Translate` (not `CSS.Transform`) to avoid bounce-back from scale factors.
+
+## Hidden UI (commented out, not removed)
+
+- Templates sidebar nav item (`components/layout/Sidebar.jsx`)
+- "Save as Snapshot" and "View Snapshots" in invoice dropdown (`components/dashboard/InvoiceTable.jsx`)
