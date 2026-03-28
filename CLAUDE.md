@@ -90,7 +90,7 @@ FK ON DELETE policies: snapshots cascade on invoice delete, template_id and font
 
 ## Verification
 
-- **Playwright MCP** is available — use it to verify frontend changes (navigate pages, evaluate DOM, check computed styles, take screenshots)
+- **Playwright MCP** is available — use it to verify frontend changes (navigate pages, evaluate DOM, check computed styles, take screenshots). Always save screenshots to `.playwright-mcp/` (e.g., `filename: ".playwright-mcp/my-screenshot.png"`)
 - After CSS/layout changes, evaluate computed heights and overflow properties to confirm the fix works
 - **E2E tests** — run after any frontend/backend change to catch regressions. Always add tests for new features.
 
