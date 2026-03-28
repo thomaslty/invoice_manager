@@ -55,6 +55,7 @@ export default function InvoiceForm({
   removeItem,
   updateItem,
   updateCategoryName,
+  reorderItem,
   setCurrency,
   grandTotal,
   fonts = [],
@@ -107,6 +108,7 @@ export default function InvoiceForm({
           onRemoveItem={removeItem}
           onUpdateItem={updateItem}
           onUpdateCategoryName={updateCategoryName}
+          onReorderItem={reorderItem}
           onSetCurrency={setCurrency}
           grandTotal={grandTotal}
         />

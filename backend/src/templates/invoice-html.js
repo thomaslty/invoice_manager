@@ -18,13 +18,24 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-function formatCurrency(value, currency = '$') {
+const CURRENCY_SYMBOLS = {
+  HKD: 'HK$',
+  USD: 'US$',
+  RMB: '¥',
+};
+
+function getCurrencySymbol(code) {
+  return CURRENCY_SYMBOLS[code] ?? code;
+}
+
+function formatCurrency(value, currency = 'HKD') {
   const num = Number(value) || 0;
   const formatted = num.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return `${esc(currency)}${formatted}`;
+  const symbol = getCurrencySymbol(currency);
+  return `${esc(symbol)}${formatted}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,20 +158,21 @@ function renderItems(items) {
 
     let categoryTotal = 0;
 
-    for (const item of catItems) {
+    for (let i = 0; i < catItems.length; i++) {
+      const item = catItems[i];
       const total = Number(item.total) || 0;
       categoryTotal += total;
       tableRows += `
         <tr class="item-row">
-          <td class="col-no">${esc(item.no)}</td>
+          <td class="col-no">${i + 1}</td>
           <td class="col-desc">${esc(item.description)}</td>
           <td class="col-qty">${esc(item.qty)}</td>
           <td class="col-total">${formatCurrency(total, currency)}</td>
         </tr>`;
     }
 
-    // Subtotal per category (only when multiple categories)
-    if (hasMultipleCategories) {
+    // Subtotal per category (when category has a name)
+    if (category.name) {
       tableRows += `
         <tr class="subtotal-row">
           <td colspan="3" class="subtotal-label">Subtotal</td>

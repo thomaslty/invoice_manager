@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { title: 'Invoices', path: '/', icon: FileText },
-  { title: 'Templates', path: '/templates', icon: LayoutTemplate },
+  // { title: 'Templates', path: '/templates', icon: LayoutTemplate },
   { title: 'Fonts', path: '/fonts', icon: Type },
 ]
 

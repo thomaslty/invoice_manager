@@ -1,5 +1,26 @@
 import { useState, useCallback } from 'react';
 
+function newItem() {
+  return { id: crypto.randomUUID(), description: '', qty: 1, total: 0 };
+}
+
+/** Ensure every item in every category has a stable unique ID. */
+function ensureItemIds(data) {
+  const cats = data?.sections?.items?.categories;
+  if (!cats) return data;
+  let changed = false;
+  const patched = cats.map(cat => {
+    const items = cat.items?.map(item => {
+      if (item.id) return item;
+      changed = true;
+      return { ...item, id: crypto.randomUUID() };
+    });
+    return items ? { ...cat, items } : cat;
+  });
+  if (!changed) return data;
+  return { ...data, sections: { ...data.sections, items: { ...data.sections.items, categories: patched } } };
+}
+
 const defaultFormData = {
   sections: {
     header: { visible: true, title: 'INVOICE' },
@@ -15,11 +36,11 @@ const defaultFormData = {
     },
     items: {
       visible: true,
-      currency: 'HK$',
+      currency: 'HKD',
       categories: [
         {
           name: '',
-          items: [{ no: 1, description: '', qty: 1, total: 0 }],
+          items: [newItem()],
         },
       ],
     },
@@ -37,8 +58,16 @@ const defaultFormData = {
 };
 
 export function useInvoiceForm(initialData = null) {
-  const [formData, setFormData] = useState(initialData || defaultFormData);
+  const [formData, _setFormData] = useState(initialData || defaultFormData);
   const [fontId, setFontId] = useState(null);
+
+  const setFormData = useCallback((dataOrFn) => {
+    if (typeof dataOrFn === 'function') {
+      _setFormData(prev => ensureItemIds(dataOrFn(prev)));
+    } else {
+      _setFormData(ensureItemIds(dataOrFn));
+    }
+  }, []);
 
   const updateSection = useCallback((sectionKey, data) => {
     setFormData(prev => ({
@@ -87,7 +116,7 @@ export function useInvoiceForm(initialData = null) {
             ...prev.sections.items,
             categories: [
               ...cats,
-              { name: '', items: [{ no: 1, description: '', qty: 1, total: 0 }] },
+              { name: '', items: [newItem()] },
             ],
           },
         },
@@ -106,7 +135,7 @@ export function useInvoiceForm(initialData = null) {
             ...prev.sections.items,
             categories: cats.length
               ? cats
-              : [{ name: '', items: [{ no: 1, description: '', qty: 1, total: 0 }] }],
+              : [{ name: '', items: [newItem()] }],
           },
         },
       };
@@ -116,11 +145,9 @@ export function useInvoiceForm(initialData = null) {
   const addItem = useCallback((catIndex) => {
     setFormData(prev => {
       const cats = [...prev.sections.items.categories];
-      const items = cats[catIndex].items;
-      const maxNo = items.reduce((max, item) => Math.max(max, item.no || 0), 0);
       cats[catIndex] = {
         ...cats[catIndex],
-        items: [...items, { no: maxNo + 1, description: '', qty: 1, total: 0 }],
+        items: [...cats[catIndex].items, newItem()],
       };
       return {
         ...prev,
@@ -138,9 +165,7 @@ export function useInvoiceForm(initialData = null) {
       const items = cats[catIndex].items.filter((_, i) => i !== itemIndex);
       cats[catIndex] = {
         ...cats[catIndex],
-        items: items.length
-          ? items
-          : [{ no: 1, description: '', qty: 1, total: 0 }],
+        items: items.length ? items : [newItem()],
       };
       return {
         ...prev,
@@ -182,6 +207,23 @@ export function useInvoiceForm(initialData = null) {
     });
   }, []);
 
+  const reorderItem = useCallback((catIndex, fromIndex, toIndex) => {
+    setFormData(prev => {
+      const cats = [...prev.sections.items.categories];
+      const items = [...cats[catIndex].items];
+      const [moved] = items.splice(fromIndex, 1);
+      items.splice(toIndex, 0, moved);
+      cats[catIndex] = { ...cats[catIndex], items };
+      return {
+        ...prev,
+        sections: {
+          ...prev.sections,
+          items: { ...prev.sections.items, categories: cats },
+        },
+      };
+    });
+  }, []);
+
   const setCurrency = useCallback((currency) => {
     setFormData(prev => ({
       ...prev,
@@ -210,6 +252,7 @@ export function useInvoiceForm(initialData = null) {
     removeItem,
     updateItem,
     updateCategoryName,
+    reorderItem,
     setCurrency,
     grandTotal,
   };

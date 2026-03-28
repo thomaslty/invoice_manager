@@ -17,3 +17,13 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 backend/fonts/*
 !backend/fonts/.gitkeep
+
+# data folder
+data/
+
+# playwright
+.playwright-mcp/
+test-results/
+
+# e2e
+e2e/

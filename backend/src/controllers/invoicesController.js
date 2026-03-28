@@ -2,6 +2,24 @@ import * as invoiceService from '../services/invoiceService.js';
 import * as pdfService from '../services/pdfService.js';
 import * as previewService from '../services/previewService.js';
 
+function validateInvoiceData(jsonData) {
+  const errors = [];
+  const meta = jsonData?.sections?.metadata?.fields || {};
+  if (!meta.refNo?.trim()) errors.push('Reference number is required');
+  if (!meta.client?.trim()) errors.push('Client name is required');
+
+  const categories = jsonData?.sections?.items?.categories || [];
+  let grandTotal = 0;
+  for (const cat of categories) {
+    for (const item of cat.items || []) {
+      grandTotal += Number(item.total) || 0;
+    }
+  }
+  if (grandTotal <= 0) errors.push('Grand total must be greater than 0');
+
+  return errors;
+}
+
 export async function list(req, res) {
   const { search, sort_by, sort_order, date_from, date_to } = req.query;
   const invoices = await invoiceService.listInvoices({
@@ -23,11 +41,17 @@ export async function getById(req, res) {
 export async function create(req, res) {
   const { templateId, fontId, jsonData } = req.body;
   if (!jsonData) return res.status(400).json({ error: 'jsonData is required' });
+  const errors = validateInvoiceData(jsonData);
+  if (errors.length) return res.status(400).json({ error: errors.join('; ') });
   const invoice = await invoiceService.createInvoice({ templateId, fontId, jsonData });
   res.status(201).json(invoice);
 }
 
 export async function update(req, res) {
+  if (req.body.jsonData) {
+    const errors = validateInvoiceData(req.body.jsonData);
+    if (errors.length) return res.status(400).json({ error: errors.join('; ') });
+  }
   const invoice = await invoiceService.updateInvoice(Number(req.params.id), req.body);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   res.json(invoice);

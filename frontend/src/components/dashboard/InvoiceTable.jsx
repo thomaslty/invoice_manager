@@ -304,7 +304,7 @@ export default function InvoiceTable() {
                           <DownloadIcon />
                           Download PDF
                         </DropdownMenuItem>
-                        <DropdownMenuItem
+                        {/* <DropdownMenuItem
                           onClick={() => {
                             setSnapshotInvoiceId(invoice.id);
                             setSnapshotName("");
@@ -322,7 +322,7 @@ export default function InvoiceTable() {
                         >
                           <HistoryIcon />
                           View Snapshots
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"

@@ -29,6 +29,7 @@ export default function InvoiceEditorPage() {
     removeItem,
     updateItem,
     updateCategoryName,
+    reorderItem,
     setCurrency,
     grandTotal,
   } = useInvoiceForm();
@@ -74,6 +75,16 @@ export default function InvoiceEditorPage() {
   }, [id, templateId, setFormData, setFontId]);
 
   const handleSave = async () => {
+    const errors = [];
+    const meta = formData.sections?.metadata?.fields || {};
+    if (!meta.refNo?.trim()) errors.push('Reference number is required');
+    if (!meta.client?.trim()) errors.push('Client name is required');
+    if (grandTotal <= 0) errors.push('Grand total must be greater than 0');
+    if (errors.length) {
+      errors.forEach((msg) => toast.error(msg));
+      return false;
+    }
+
     setSaving(true);
     try {
       if (id) {
@@ -83,17 +94,22 @@ export default function InvoiceEditorPage() {
         navigate(`/invoices/${result.id}/edit`, { replace: true });
       }
       toast.success('Invoice saved');
+      return true;
     } catch (err) {
       console.error('Save failed:', err);
       toast.error('Failed to save invoice');
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDownloadPdf = () => {
-    if (id) {
-      window.open(api.getInvoicePdfUrl(id), '_blank');
+  const handleDownloadPdf = async () => {
+    const saved = await handleSave();
+    if (!saved) return;
+    const invoiceId = id || window.location.pathname.match(/\/invoices\/(\d+)\/edit/)?.[1];
+    if (invoiceId) {
+      window.open(api.getInvoicePdfUrl(invoiceId), '_blank');
     }
   };
 
@@ -106,7 +122,7 @@ export default function InvoiceEditorPage() {
   }
 
   return (
-    <div className="flex h-full -m-6">
+    <div className="flex h-full">
       {/* Left panel — Editor */}
       <div className="w-1/2 flex flex-col border-r border-border min-w-0 min-h-0">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
@@ -144,6 +160,7 @@ export default function InvoiceEditorPage() {
             removeItem={removeItem}
             updateItem={updateItem}
             updateCategoryName={updateCategoryName}
+            reorderItem={reorderItem}
             setCurrency={setCurrency}
             grandTotal={grandTotal}
             fonts={fonts}

@@ -13,6 +13,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
+/** Extract font name from a Google Fonts CSS URL. Returns null for non-Google URLs. */
+function parseGoogleFontsUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.endsWith('googleapis.com') && !parsed.hostname.endsWith('google.com')) return null;
+    const family = parsed.searchParams.get('family');
+    if (!family) return null;
+    // Take everything before the first ':' (weight/style specifiers)
+    const name = family.split(':')[0].replace(/\+/g, ' ').trim();
+    return name || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function FontUploadDialog({ open, onOpenChange, onFontAdded }) {
   const [tab, setTab] = useState("upload");
   const [loading, setLoading] = useState(false);
@@ -27,6 +42,7 @@ export default function FontUploadDialog({ open, onOpenChange, onFontAdded }) {
   const [remoteUrl, setRemoteUrl] = useState("");
   const [remoteName, setRemoteName] = useState("");
   const [remoteFamily, setRemoteFamily] = useState("");
+  const [multiFontError, setMultiFontError] = useState(false);
 
   const resetForm = () => {
     setFile(null);
@@ -35,6 +51,7 @@ export default function FontUploadDialog({ open, onOpenChange, onFontAdded }) {
     setRemoteUrl("");
     setRemoteName("");
     setRemoteFamily("");
+    setMultiFontError(false);
     setError(null);
     setLoading(false);
   };
@@ -156,10 +173,32 @@ export default function FontUploadDialog({ open, onOpenChange, onFontAdded }) {
                   type="url"
                   placeholder="https://fonts.googleapis.com/css2?family=..."
                   value={remoteUrl}
-                  onChange={(e) => setRemoteUrl(e.target.value)}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    setRemoteUrl(url);
+                    // Detect multi-font Google Fonts URLs
+                    try {
+                      const u = new URL(url);
+                      if ((u.hostname.endsWith('googleapis.com') || u.hostname.endsWith('google.com')) && u.searchParams.getAll('family').length > 1) {
+                        setMultiFontError(true);
+                        return;
+                      }
+                    } catch { /* not a valid URL yet, ignore */ }
+                    setMultiFontError(false);
+                    const parsed = parseGoogleFontsUrl(url);
+                    if (parsed) {
+                      if (!remoteName) setRemoteName(parsed);
+                      if (!remoteFamily) setRemoteFamily(parsed);
+                    }
+                  }}
                   required
                 />
               </div>
+              {multiFontError && (
+                <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  Multiple font families detected. Please use a URL with a single font family.
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="remote-name">Name</Label>
                 <Input
@@ -180,7 +219,7 @@ export default function FontUploadDialog({ open, onOpenChange, onFontAdded }) {
                 />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={loading || !remoteUrl || !remoteName}>
+                <Button type="submit" disabled={loading || !remoteUrl || !remoteName || multiFontError}>
                   {loading ? "Adding..." : "Add Font"}
                 </Button>
               </DialogFooter>
