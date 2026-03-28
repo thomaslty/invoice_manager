@@ -26,4 +26,5 @@ data/
 test-results/
 
 # e2e
-e2e/
+e2e/node_modules
+e2e/test-results/
