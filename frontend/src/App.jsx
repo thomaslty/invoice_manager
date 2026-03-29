@@ -5,6 +5,7 @@ import TemplateListPage from '@/pages/TemplateListPage'
 import InvoiceEditorPage from '@/pages/InvoiceEditorPage'
 import TemplateEditorPage from '@/pages/TemplateEditorPage'
 import FontManagementPage from '@/pages/FontManagementPage'
+import LoginPage from '@/components/auth/LoginPage'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/components/auth/AuthProvider'
@@ -14,6 +15,7 @@ export default function App() {
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <AuthProvider>
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/templates" element={<TemplateListPage />} />

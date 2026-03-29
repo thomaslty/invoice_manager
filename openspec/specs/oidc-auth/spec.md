@@ -26,7 +26,7 @@ The backend SHALL accept the following environment variables for OIDC configurat
 - `OIDC_REDIRECT_URI` (required unless BYPASS_LOGIN)
 - `OIDC_POST_LOGOUT_REDIRECT_URI` (optional, defaults to origin derived from `OIDC_REDIRECT_URI`)
 - `OIDC_SCOPES` (optional, defaults to `openid email profile`)
-- `OIDC_NAME` (optional, defaults to `SSO`)
+- `OIDC_NAME` (optional, defaults to `SSO`) — displayed on the login page button as "Sign in with {OIDC_NAME}"
 - `OIDC_AUTO_CREATE_USER` (optional, defaults to `true`)
 - `SESSION_MAX_AGE` (optional, defaults to `1800` seconds)
 
@@ -38,12 +38,31 @@ The backend SHALL accept the following environment variables for OIDC configurat
 - **WHEN** any required OIDC variable is missing and `BYPASS_LOGIN` is not `true`
 - **THEN** the backend SHALL fail to start with an error naming the missing variable
 
+### Requirement: Login page
+The frontend SHALL render a dedicated login page at the `/login` route. The page SHALL display the app name ("Invoice Manager") and a single SSO login button labeled "Sign in with {OIDC_NAME}" (where `OIDC_NAME` defaults to `SSO`). The button SHALL navigate to `/api/auth/login` (full page navigation). The page SHALL NOT include email/password fields, registration links, or social login buttons. The design SHALL use shadcn Card component, centered on a muted background.
+
+#### Scenario: Unauthenticated user visits app
+- **WHEN** a user navigates to any app route and has no valid session
+- **THEN** the frontend SHALL redirect to `/login` to show the login page
+
+#### Scenario: Login page renders SSO button
+- **WHEN** the login page is displayed
+- **THEN** the page SHALL show the app name, a Card with a welcome heading, and a single button that navigates to `/api/auth/login`
+
+#### Scenario: SSO button click initiates OIDC flow
+- **WHEN** the user clicks the SSO login button
+- **THEN** the browser SHALL navigate to `/api/auth/login`, which triggers the backend OIDC redirect to the IdP
+
+#### Scenario: Already authenticated user visits login page
+- **WHEN** an authenticated user navigates to `/login`
+- **THEN** the frontend SHALL redirect to `/` (the dashboard)
+
 ### Requirement: Login redirect
 The `GET /api/auth/login` route SHALL build an OIDC authorization URL using the discovered `authorization_endpoint`, configured `OIDC_CLIENT_ID`, `OIDC_REDIRECT_URI`, and `OIDC_SCOPES`, then redirect the browser (HTTP 302) to the IdP.
 
-#### Scenario: Unauthenticated user visits app
-- **WHEN** a user navigates to the app and has no valid session
-- **THEN** the frontend SHALL redirect to `/api/auth/login`, which returns HTTP 302 to the IdP authorization endpoint
+#### Scenario: Backend login endpoint redirects to IdP
+- **WHEN** a browser navigates to `/api/auth/login`
+- **THEN** the backend SHALL return HTTP 302 to the IdP authorization endpoint
 
 ### Requirement: OIDC callback and user upsert
 The `GET /api/auth/callback` route SHALL exchange the authorization code for tokens, extract `email`, `name`, and `sub` claims, and upsert the user in the database.
@@ -62,7 +81,7 @@ The `GET /api/auth/callback` route SHALL exchange the authorization code for tok
 
 #### Scenario: Invalid or expired callback code
 - **WHEN** the IdP redirects to `/api/auth/callback` with an invalid or expired code
-- **THEN** the backend SHALL redirect to `/api/auth/login` to restart the flow
+- **THEN** the backend SHALL redirect to `/login` to show the login page
 
 ### Requirement: Session cookie specification
 The session cookie SHALL be configured as follows:
@@ -117,15 +136,15 @@ The `GET /api/auth/me` route SHALL return the current user's `{ id, email, name 
 - **THEN** the response SHALL be HTTP 401
 
 ### Requirement: Logout
-The `POST /api/auth/logout` route SHALL delete the session from the database, clear the `session_id` cookie, and redirect to the IdP's `end_session_endpoint` (if available) or `/`.
+The `POST /api/auth/logout` route SHALL delete the session from the database, clear the `session_id` cookie, and redirect to the IdP's `end_session_endpoint` (if available) or `/login`.
 
-#### Scenario: Successful logout
-- **WHEN** an authenticated user sends `POST /api/auth/logout`
-- **THEN** the backend SHALL delete the session, clear the cookie, and redirect (HTTP 302) to the IdP logout endpoint with `post_logout_redirect_uri` set to `OIDC_POST_LOGOUT_REDIRECT_URI`
+#### Scenario: Successful logout with IdP end_session
+- **WHEN** an authenticated user sends `POST /api/auth/logout` and the IdP has an `end_session_endpoint`
+- **THEN** the backend SHALL delete the session, clear the cookie, and redirect (HTTP 302) to the IdP logout endpoint with `post_logout_redirect_uri` set to `OIDC_POST_LOGOUT_REDIRECT_URI` (which SHALL default to the app's `/login` page)
 
 #### Scenario: Logout without IdP end_session_endpoint
 - **WHEN** the discovered OIDC config does not include `end_session_endpoint`
-- **THEN** the backend SHALL delete the session, clear the cookie, and redirect to `/`
+- **THEN** the backend SHALL delete the session, clear the cookie, and redirect to `/login`
 
 ### Requirement: Expired session cleanup
 The backend SHALL delete expired sessions from the database during login operations to prevent unbounded table growth.
@@ -149,8 +168,12 @@ When `BYPASS_LOGIN=true`, the backend SHALL skip all OIDC operations and authent
 - **WHEN** `BYPASS_LOGIN=true` and `/api/auth/me` is called
 - **THEN** the response SHALL return the `__admin__` user
 
-#### Scenario: Bypass login/logout routes
-- **WHEN** `BYPASS_LOGIN=true` and `/api/auth/login` or `/api/auth/logout` is called
+#### Scenario: Bypass login route
+- **WHEN** `BYPASS_LOGIN=true` and `/api/auth/login` is called
+- **THEN** the response SHALL redirect to `/`
+
+#### Scenario: Bypass logout route
+- **WHEN** `BYPASS_LOGIN=true` and `/api/auth/logout` is called
 - **THEN** the response SHALL redirect to `/`
 
 ### Requirement: Users database table

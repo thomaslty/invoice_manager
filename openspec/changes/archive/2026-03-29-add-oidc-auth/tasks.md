@@ -20,7 +20,7 @@
 - [x] 3.1 Update `invoiceService.js` — add `userId` parameter to `listInvoices`, `getInvoiceById`, `createInvoice`, `updateInvoice`, `deleteInvoice`
 - [x] 3.2 Update `invoicesController.js` — pass `req.user.id` to all service calls
 - [x] 3.3 Update `templateService.js` — add `userId` parameter to all CRUD operations
-- [ ] 3.4 Update `templatesController.js` — pass `req.user.id` to all service calls
+- [x] 3.4 Update `templatesController.js` — pass `req.user.id` to all service calls
 - [x] 3.5 Update `snapshotService.js` — `cloneSnapshot` sets `userId` on the new invoice; add helper to verify snapshot's parent invoice ownership by looking up `snapshot.invoiceId` and checking `invoice.userId === userId`
 - [x] 3.6 Update `snapshotsController.js` — pass `req.user.id`; for nested routes (`/invoices/:invoiceId/snapshots`), verify the invoice belongs to `req.user.id` before list/create; for direct routes (`/snapshots/:id`, `/snapshots/:id/clone`), look up snapshot → parent invoice → verify ownership before get/delete/clone
 - [x] 3.7 Update `fontService.js` — add `uploadedBy` to `createFont`/`createFontWithFile`, add ownership check to `deleteFont` (system font 403, wrong user 403)
@@ -37,6 +37,12 @@
 - [x] 5.2 Create `frontend/src/components/auth/AuthProvider.jsx` — context with `/api/auth/me` call, loading state, 401 redirect to `/api/auth/login`
 - [x] 5.3 Update `frontend/src/lib/api.js` — add global 401 handler that redirects to `/api/auth/login`
 - [x] 5.4 Update `frontend/src/App.jsx` — wrap routes with `<AuthProvider>`
+- [x] 5.5 Create `frontend/src/components/auth/LoginPage.jsx` — login page with shadcn Card, app name, "Sign in with {OIDC_NAME}" button that navigates to `/api/auth/login`
+- [x] 5.6 Update `frontend/src/App.jsx` — add `/login` route rendering `LoginPage`, unauthenticated redirect goes to `/login` instead of `/api/auth/login`
+- [x] 5.7 Update `frontend/src/components/auth/AuthProvider.jsx` — redirect to `/login` on 401 instead of `/api/auth/login`
+- [x] 5.8 Update `frontend/src/lib/api.js` — global 401 handler redirects to `/login` instead of `/api/auth/login`
+- [x] 5.9 Update `backend/src/routes/auth.js` — callback error and logout redirect to `/login` instead of `/api/auth/login` or `/`
+- [x] 5.10 Add `GET /api/auth/config` endpoint — returns `{ oidcName }` so the login page can display the provider name without hardcoding
 
 ## 6. Frontend NavUser, Sidebar & Font UI
 
@@ -63,5 +69,9 @@
   - Upload a font via UI → font appears in list with delete button enabled (`canDelete: true`)
   - Delete own uploaded font → succeeds, font removed from list
   - `DELETE /api/fonts/:id` for system font returns 403 (API-level check)
-- [x] 7.3 Run existing `invoice-editor.spec.js` tests (7 tests) to verify no regressions with auth middleware
-- [x] 7.4 Run existing `fonts.spec.js` tests (3 tests) to verify no regressions with auth middleware
+- [x] 7.3 Add login page E2E tests to `e2e/auth.spec.js`:
+  - Login page renders at `/login` with SSO button
+  - SSO button navigates to `/api/auth/login`
+  - Authenticated user visiting `/login` redirects to `/`
+- [x] 7.4 Run existing `invoice-editor.spec.js` tests (7 tests) to verify no regressions with auth middleware
+- [x] 7.5 Run existing `fonts.spec.js` tests (3 tests) to verify no regressions with auth middleware

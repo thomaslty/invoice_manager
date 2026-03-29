@@ -5,6 +5,11 @@ import * as authService from '../services/authService.js';
 const router = Router();
 const isBypass = process.env.BYPASS_LOGIN === 'true';
 
+// Public config endpoint (no auth required)
+router.get('/config', (req, res) => {
+  res.json({ oidcName: process.env.OIDC_NAME || 'SSO' });
+});
+
 if (isBypass) {
   router.get('/me', async (req, res) => {
     const admin = await authService.ensureAdminUser();
@@ -43,7 +48,7 @@ if (isBypass) {
       const state = req.query.state;
       const pending = pendingLogins.get(state);
       if (!pending) {
-        return res.redirect('/api/auth/login');
+        return res.redirect('/login');
       }
       pendingLogins.delete(state);
 
@@ -81,7 +86,7 @@ if (isBypass) {
       res.redirect('/');
     } catch (err) {
       console.error('OIDC callback error:', err);
-      res.redirect('/api/auth/login');
+      res.redirect('/login');
     }
   });
 
@@ -116,7 +121,7 @@ if (isBypass) {
     if (logoutUrl) {
       res.redirect(logoutUrl.href);
     } else {
-      res.redirect('/');
+      res.redirect('/login');
     }
   });
 }

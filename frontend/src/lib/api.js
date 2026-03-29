@@ -6,7 +6,7 @@ async function request(path, options = {}) {
     ...options,
   });
   if (res.status === 401) {
-    window.location.href = '/api/auth/login';
+    window.location.href = '/login';
     throw new Error('Authentication required');
   }
   if (!res.ok) {

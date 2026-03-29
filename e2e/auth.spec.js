@@ -75,3 +75,20 @@ test.describe('Auth bypass and NavUser UI', () => {
     await expect(footer.getByRole('button', { name: 'Toggle theme' })).toHaveCount(0);
   });
 });
+
+test.describe('Login page', () => {
+  test('GET /api/auth/config returns oidcName', async ({ request }) => {
+    const res = await request.get(`${BASE}/api/auth/config`);
+    expect(res.status()).toBe(200);
+    const data = await res.json();
+    expect(data.oidcName).toBeDefined();
+  });
+
+  test('authenticated user visiting /login redirects to /', async ({ page }) => {
+    // In BYPASS_LOGIN mode, user is always authenticated
+    // This also verifies the /login route exists and LoginPage component loads
+    await page.goto(`${BASE}/login`);
+    await page.waitForURL('**/');
+    await expect(page).toHaveURL(BASE + '/');
+  });
+});

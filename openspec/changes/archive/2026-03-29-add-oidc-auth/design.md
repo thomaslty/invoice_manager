@@ -84,11 +84,13 @@ The target IdP is Authentik (standard OAuth2/OIDC provider). The solution must w
 
 **Why over per-route**: Secure by default. New routes are automatically protected. Only auth endpoints and health check are exempt.
 
-### 9. Frontend auth: redirect-based (not SPA route)
+### 9. Frontend auth: login page with SSO button
 
-**Choice**: When `/api/auth/me` returns 401, the frontend does `window.location.href = '/api/auth/login'` (full page navigation), not a React Router redirect to a `/login` page.
+**Choice**: When `/api/auth/me` returns 401, the frontend redirects to a `/login` React route that renders a login page with a single SSO button. Clicking the button navigates to `/api/auth/login` (full page navigation to trigger the backend OIDC redirect).
 
-**Why**: There is no login page to render — the backend redirects to the IdP. A full page navigation is the simplest approach and avoids needing a login route component.
+**Why**: Showing a login page first (rather than immediately redirecting to the IdP) gives users a clear entry point, avoids unexpected redirects to an external auth provider, and provides a consistent place to land after logout. The login page uses shadcn Card, shows the app name and a "Sign in with {OIDC_NAME}" button. No email/password fields — SSO is the only auth method.
+
+**Alternative considered**: Direct redirect to IdP on 401. Rejected because it's jarring UX — user sees a flash of loading spinner then lands on an external page with no context. A login page is the standard pattern.
 
 ## Risks / Trade-offs
 

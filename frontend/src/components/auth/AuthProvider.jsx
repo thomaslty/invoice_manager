@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AuthContext = createContext(null);
 
@@ -9,25 +10,31 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => {
-        if (res.status === 401) {
-          window.location.href = '/api/auth/login';
-          return null;
-        }
+        if (res.status === 401) return null;
         if (!res.ok) throw new Error('Failed to fetch user');
         return res.json();
       })
       .then(data => {
-        if (data) setUser(data);
+        setUser(data);
         setLoading(false);
       })
       .catch(() => {
-        window.location.href = '/api/auth/login';
+        setUser(null);
+        setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (!loading && !user && location.pathname !== '/login') {
+      navigate('/login', { replace: true });
+    }
+  }, [loading, user, location.pathname, navigate]);
 
   if (loading) {
     return (
