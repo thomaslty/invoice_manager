@@ -15,7 +15,7 @@ services:
       retries: 5
 
   invoice_manager:
-    image: invoice_manager:latest
+    image: ghcr.io/thomaslty/invoice_manager:latest
     restart: unless-stopped
     depends_on:
       postgres:

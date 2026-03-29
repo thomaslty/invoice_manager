@@ -52,6 +52,13 @@ The system SHALL run `npx drizzle-kit migrate` in the backend directory before s
 - **WHEN** the container starts (prod or dev)
 - **THEN** database migrations run to completion before supervisord launches nginx/node (or vite/nodemon in dev)
 
+### Requirement: Production Docker Compose configuration
+The production `docker-compose.yml` SHALL reference the GHCR-hosted image instead of a locally-built image.
+
+#### Scenario: Image pulled from GHCR
+- **WHEN** `docker compose up` is run in production
+- **THEN** Docker SHALL pull `ghcr.io/thomaslty/invoice_manager:latest` from GHCR
+
 ### Requirement: Docker compose reduces to two services
 The production and dev docker-compose files SHALL define exactly two services: `postgres` and `invoice_manager`. The separate `backend` and `frontend` services SHALL be removed.
 

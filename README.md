@@ -14,11 +14,11 @@ A self-hosted invoice management app with live preview, PDF export, custom fonts
 
 ## Quick Start (Production)
 
-Build and run with Docker Compose:
+Run with Docker Compose (pulls pre-built image from GHCR):
 
 ```bash
 git clone <repo-url> && cd invoice_manager
-docker build -t invoice_manager:latest .
+cp .env.example .env  # configure OIDC and database settings
 docker compose up -d
 ```
 
