@@ -392,29 +392,27 @@ export function renderInvoiceHtml({ jsonData, fontInfo, baseUrl = '' }) {
 
     /* ---- Metadata key-value pairs ---- */
     .metadata {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 16px;
       margin-bottom: 20px;
     }
 
     .meta-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 4px 0;
-      font-size: 9.5pt;
+      display: contents;
     }
 
     .meta-label {
       font-weight: 600;
       color: #555;
-      min-width: 130px;
-      flex-shrink: 0;
+      font-size: 9.5pt;
+      padding: 4px 0;
     }
 
     .meta-value {
-      text-align: right;
       color: #333;
-      flex: 1;
-      margin-left: 16px;
+      font-size: 9.5pt;
+      padding: 4px 0;
     }
 
     /* ---- Divider ---- */
