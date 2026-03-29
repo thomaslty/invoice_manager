@@ -19,8 +19,8 @@ function extractFields(jsonData) {
   };
 }
 
-export async function listInvoices({ search, sortBy, sortOrder, dateFrom, dateTo } = {}) {
-  const conditions = [];
+export async function listInvoices({ userId, search, sortBy, sortOrder, dateFrom, dateTo } = {}) {
+  const conditions = [eq(invoices.userId, userId)];
 
   if (search) {
     const pattern = `%${search}%`;
@@ -47,14 +47,15 @@ export async function listInvoices({ search, sortBy, sortOrder, dateFrom, dateTo
   return db.select().from(invoices).where(where).orderBy(orderFn(sortColumn));
 }
 
-export async function getInvoiceById(id) {
-  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+export async function getInvoiceById(id, userId) {
+  const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId)));
   return invoice;
 }
 
-export async function createInvoice(data) {
+export async function createInvoice(data, userId) {
   const extracted = extractFields(data.jsonData);
   const [invoice] = await db.insert(invoices).values({
+    userId,
     templateId: data.templateId || null,
     fontId: data.fontId,
     jsonData: data.jsonData,
@@ -63,19 +64,19 @@ export async function createInvoice(data) {
   return invoice;
 }
 
-export async function updateInvoice(id, data) {
+export async function updateInvoice(id, data, userId) {
   const updates = { ...data, updatedAt: new Date() };
   if (data.jsonData) {
     Object.assign(updates, extractFields(data.jsonData));
   }
   const [invoice] = await db.update(invoices)
     .set(updates)
-    .where(eq(invoices.id, id))
+    .where(and(eq(invoices.id, id), eq(invoices.userId, userId)))
     .returning();
   return invoice;
 }
 
-export async function deleteInvoice(id) {
-  const [invoice] = await db.delete(invoices).where(eq(invoices.id, id)).returning();
+export async function deleteInvoice(id, userId) {
+  const [invoice] = await db.delete(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId))).returning();
   return invoice;
 }

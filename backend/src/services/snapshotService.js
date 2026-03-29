@@ -1,6 +1,14 @@
 import { db } from '../db/index.js';
 import { invoiceSnapshots, invoices } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+
+export async function verifySnapshotOwnership(snapshotId, userId) {
+  const [row] = await db.select({ invoiceUserId: invoices.userId })
+    .from(invoiceSnapshots)
+    .innerJoin(invoices, eq(invoiceSnapshots.invoiceId, invoices.id))
+    .where(eq(invoiceSnapshots.id, snapshotId));
+  return row?.invoiceUserId === userId;
+}
 
 export async function listByInvoice(invoiceId) {
   return db.select().from(invoiceSnapshots)
@@ -31,11 +39,12 @@ export async function deleteSnapshot(id) {
   return snapshot;
 }
 
-export async function cloneSnapshot(snapshotId) {
+export async function cloneSnapshot(snapshotId, userId) {
   const snapshot = await getSnapshotById(snapshotId);
   if (!snapshot) return null;
 
   const [invoice] = await db.insert(invoices).values({
+    userId,
     fontId: snapshot.fontId,
     jsonData: snapshot.jsonData,
     refNo: snapshot.jsonData?.sections?.metadata?.fields?.refNo || null,

@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { ModeToggle } from '@/components/mode-toggle'
+import { NavUser } from '@/components/layout/NavUser'
 
 const navItems = [
   { title: 'Invoices', path: '/', icon: FileText },
@@ -65,7 +65,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <ModeToggle />
+            <NavUser />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

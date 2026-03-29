@@ -15,6 +15,13 @@
       "when": 1773022717915,
       "tag": "0001_third_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774730232019,
+      "tag": "0002_military_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

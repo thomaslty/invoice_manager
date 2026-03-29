@@ -23,6 +23,7 @@ function validateInvoiceData(jsonData) {
 export async function list(req, res) {
   const { search, sort_by, sort_order, date_from, date_to } = req.query;
   const invoices = await invoiceService.listInvoices({
+    userId: req.user.id,
     search,
     sortBy: sort_by,
     sortOrder: sort_order,
@@ -33,7 +34,7 @@ export async function list(req, res) {
 }
 
 export async function getById(req, res) {
-  const invoice = await invoiceService.getInvoiceById(Number(req.params.id));
+  const invoice = await invoiceService.getInvoiceById(Number(req.params.id), req.user.id);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   res.json(invoice);
 }
@@ -43,7 +44,7 @@ export async function create(req, res) {
   if (!jsonData) return res.status(400).json({ error: 'jsonData is required' });
   const errors = validateInvoiceData(jsonData);
   if (errors.length) return res.status(400).json({ error: errors.join('; ') });
-  const invoice = await invoiceService.createInvoice({ templateId, fontId, jsonData });
+  const invoice = await invoiceService.createInvoice({ templateId, fontId, jsonData }, req.user.id);
   res.status(201).json(invoice);
 }
 
@@ -52,19 +53,19 @@ export async function update(req, res) {
     const errors = validateInvoiceData(req.body.jsonData);
     if (errors.length) return res.status(400).json({ error: errors.join('; ') });
   }
-  const invoice = await invoiceService.updateInvoice(Number(req.params.id), req.body);
+  const invoice = await invoiceService.updateInvoice(Number(req.params.id), req.body, req.user.id);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   res.json(invoice);
 }
 
 export async function remove(req, res) {
-  const invoice = await invoiceService.deleteInvoice(Number(req.params.id));
+  const invoice = await invoiceService.deleteInvoice(Number(req.params.id), req.user.id);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   res.json({ success: true });
 }
 
 export async function downloadPdf(req, res) {
-  const invoice = await invoiceService.getInvoiceById(Number(req.params.id));
+  const invoice = await invoiceService.getInvoiceById(Number(req.params.id), req.user.id);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;

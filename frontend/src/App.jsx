@@ -7,10 +7,12 @@ import TemplateEditorPage from '@/pages/TemplateEditorPage'
 import FontManagementPage from '@/pages/FontManagementPage'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AuthProvider } from '@/components/auth/AuthProvider'
 
 export default function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <AuthProvider>
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
@@ -23,6 +25,7 @@ export default function App() {
         </Route>
       </Routes>
       <Toaster />
+      </AuthProvider>
     </ThemeProvider>
   )
 }

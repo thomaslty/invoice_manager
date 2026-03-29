@@ -80,7 +80,7 @@ export default function FontCard({ font, previewText, onDelete }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            disabled={font.source === "system"}
+            disabled={!font.canDelete}
             onClick={() => onDelete?.(font)}
             aria-label={`Delete font ${font.name}`}
           >

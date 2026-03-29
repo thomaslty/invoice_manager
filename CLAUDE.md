@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-# Database (must be running first)
-docker compose -f docker-compose.postgres.yml up -d
+# Full dev stack (postgres + backend + frontend)
+docker compose -f docker-compose.dev.yml up -d --build
 
 # Backend (port 3000)
 cd backend && npm run dev

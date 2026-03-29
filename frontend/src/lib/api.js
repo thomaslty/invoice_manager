@@ -5,6 +5,10 @@ async function request(path, options = {}) {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
+  if (res.status === 401) {
+    window.location.href = '/api/auth/login';
+    throw new Error('Authentication required');
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || 'Request failed');
