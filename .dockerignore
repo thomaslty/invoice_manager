@@ -1,0 +1,8 @@
+frontend/node_modules
+frontend/dist
+backend/node_modules
+backend/uploads/*
+backend/fonts/*
+e2e
+openspec
+.git

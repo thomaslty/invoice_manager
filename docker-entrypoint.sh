@@ -2,7 +2,8 @@
 set -e
 
 echo "Running database migrations..."
+cd /app/backend
 npx drizzle-kit migrate
 
-echo "Starting server..."
+echo "Starting services..."
 exec "$@"

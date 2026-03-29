@@ -14,12 +14,14 @@ services:
       timeout: 3s
       retries: 5
 
-  backend:
-    build: ./backend
+  invoice_manager:
+    image: invoice_manager:latest
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      - "3000:80"
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://invoice_user:invoice_pass@postgres:5432/invoice_manager}
       PORT: 3000
@@ -35,16 +37,8 @@ services:
       SESSION_MAX_AGE: ${SESSION_MAX_AGE:-}
       BYPASS_LOGIN: ${BYPASS_LOGIN:-}
     volumes:
-      - uploads:/app/uploads
-      - fonts:/app/fonts
-
-  frontend:
-    build: ./frontend
-    restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "3001:80"
+      - uploads:/app/backend/uploads
+      - fonts:/app/backend/fonts
 
 volumes:
   pgdata:

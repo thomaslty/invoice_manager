@@ -11,6 +11,7 @@ import { initOidc, ensureAdminUser } from './services/authService.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 const isBypass = process.env.BYPASS_LOGIN === 'true';
 

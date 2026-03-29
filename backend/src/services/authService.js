@@ -24,7 +24,10 @@ export async function initOidc() {
     // Strip the well-known path to get the issuer base
     const wellKnownSuffix = '/.well-known/openid-configuration';
     if (serverUrl.pathname.endsWith(wellKnownSuffix)) {
-      serverUrl = new URL(serverUrl.href.replace(wellKnownSuffix, ''));
+      let base = serverUrl.href.replace(wellKnownSuffix, '');
+      // Ensure trailing slash — many providers (e.g. Authentik) include it in the issuer claim
+      if (!base.endsWith('/')) base += '/';
+      serverUrl = new URL(base);
     }
   } else if (issuerUrl) {
     serverUrl = new URL(issuerUrl);
