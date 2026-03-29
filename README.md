@@ -40,7 +40,7 @@ Copy `.env.example` and configure as needed. Key variables for production:
 | `OIDC_DISCOVERY_URL` | OIDC provider discovery URL |
 | `OIDC_CLIENT_ID` | OIDC client ID |
 | `OIDC_CLIENT_SECRET` | OIDC client secret |
-| `OIDC_REDIRECT_URI` | OAuth callback URL |
+| `OIDC_REDIRECT_URI` | OAuth callback URL (optional, auto-detected from request) |
 | `BYPASS_LOGIN` | Set `true` to skip OIDC (dev only) |
 
 See `.env.example` for the full list.

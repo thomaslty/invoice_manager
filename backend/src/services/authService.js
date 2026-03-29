@@ -43,12 +43,12 @@ export function getOidcConfig() {
   return oidcConfig;
 }
 
-export async function buildAuthorizationUrl(state, codeVerifier) {
+export async function buildAuthorizationUrl(state, codeVerifier, redirectUri) {
   const config = getOidcConfig();
   const scopes = process.env.OIDC_SCOPES || 'openid email profile';
 
   const params = {
-    redirect_uri: process.env.OIDC_REDIRECT_URI,
+    redirect_uri: redirectUri,
     scope: scopes,
     state,
   };
@@ -81,7 +81,7 @@ export async function exchangeCode(callbackUrl, expectedState, codeVerifier) {
   };
 }
 
-export function buildLogoutUrl(idToken) {
+export function buildLogoutUrl(idToken, redirectUri) {
   const config = getOidcConfig();
   const serverMetadata = config.serverMetadata();
   if (!serverMetadata.end_session_endpoint) {
@@ -89,7 +89,7 @@ export function buildLogoutUrl(idToken) {
   }
 
   const postLogoutUri = process.env.OIDC_POST_LOGOUT_REDIRECT_URI ||
-    new URL('/', process.env.OIDC_REDIRECT_URI).origin;
+    new URL('/', redirectUri).origin;
 
   return oidc.buildEndSessionUrl(config, {
     id_token_hint: idToken,
@@ -173,8 +173,7 @@ export function getSessionMaxAge() {
   return SESSION_MAX_AGE;
 }
 
-export function isSecureCookie() {
-  const redirectUri = process.env.OIDC_REDIRECT_URI;
+export function isSecureCookie(redirectUri) {
   if (!redirectUri) return false;
   return redirectUri.startsWith('https');
 }

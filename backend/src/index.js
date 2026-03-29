@@ -42,7 +42,7 @@ async function start() {
     await ensureAdminUser();
   } else {
     // Validate required OIDC env vars
-    const required = ['OIDC_CLIENT_ID', 'OIDC_CLIENT_SECRET', 'OIDC_REDIRECT_URI'];
+    const required = ['OIDC_CLIENT_ID', 'OIDC_CLIENT_SECRET'];
     const missing = required.filter(k => !process.env[k]);
     if (!process.env.OIDC_DISCOVERY_URL && !process.env.OIDC_ISSUER_URL) {
       missing.push('OIDC_DISCOVERY_URL or OIDC_ISSUER_URL');

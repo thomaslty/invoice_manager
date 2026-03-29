@@ -5,6 +5,10 @@ import * as authService from '../services/authService.js';
 const router = Router();
 const isBypass = process.env.BYPASS_LOGIN === 'true';
 
+function getRedirectUri(req) {
+  return process.env.OIDC_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/callback`;
+}
+
 // Public config endpoint (no auth required)
 router.get('/config', (req, res) => {
   res.json({ oidcName: process.env.OIDC_NAME || 'SSO' });
@@ -35,7 +39,8 @@ if (isBypass) {
         if (Date.now() - val.createdAt > 600000) pendingLogins.delete(key);
       }
 
-      const authUrl = await authService.buildAuthorizationUrl(state, codeVerifier);
+      const redirectUri = getRedirectUri(req);
+      const authUrl = await authService.buildAuthorizationUrl(state, codeVerifier, redirectUri);
       res.redirect(authUrl.href);
     } catch (err) {
       console.error('OIDC login error:', err);
@@ -52,7 +57,8 @@ if (isBypass) {
       }
       pendingLogins.delete(state);
 
-      const callbackUrl = new URL(req.originalUrl, `${req.protocol}://${req.get('host')}`);
+      const redirectUri = getRedirectUri(req);
+      const callbackUrl = new URL(req.originalUrl, new URL(redirectUri).origin);
       const claims = await authService.exchangeCode(callbackUrl, state, pending.codeVerifier);
 
       if (!claims.email) {
@@ -77,7 +83,7 @@ if (isBypass) {
 
       res.cookie('session_id', session.id, {
         httpOnly: true,
-        secure: authService.isSecureCookie(),
+        secure: authService.isSecureCookie(redirectUri),
         sameSite: 'lax',
         path: '/',
         maxAge: authService.getSessionMaxAge() * 1000,
@@ -117,7 +123,8 @@ if (isBypass) {
     }
     res.clearCookie('session_id', { path: '/' });
 
-    const logoutUrl = authService.buildLogoutUrl();
+    const redirectUri = getRedirectUri(req);
+    const logoutUrl = authService.buildLogoutUrl(null, redirectUri);
     if (logoutUrl) {
       res.redirect(logoutUrl.href);
     } else {
