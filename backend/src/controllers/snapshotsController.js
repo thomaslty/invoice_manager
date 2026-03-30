@@ -1,6 +1,11 @@
 import * as snapshotService from '../services/snapshotService.js';
 import * as invoiceService from '../services/invoiceService.js';
 
+export async function listAll(req, res) {
+  const snapshots = await snapshotService.listAllByUser(req.user.id);
+  res.json(snapshots);
+}
+
 export async function listByInvoice(req, res) {
   const invoiceId = Number(req.params.invoiceId);
   const invoice = await invoiceService.getInvoiceById(invoiceId, req.user.id);

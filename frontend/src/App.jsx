@@ -3,7 +3,11 @@ import AppLayout from '@/components/layout/AppLayout'
 import DashboardPage from '@/pages/DashboardPage'
 import TemplateListPage from '@/pages/TemplateListPage'
 import InvoiceEditorPage from '@/pages/InvoiceEditorPage'
+import InvoiceViewerPage from '@/pages/InvoiceViewerPage'
 import TemplateEditorPage from '@/pages/TemplateEditorPage'
+import TemplateViewerPage from '@/pages/TemplateViewerPage'
+import SnapshotListPage from '@/pages/SnapshotListPage'
+import SnapshotViewerPage from '@/pages/SnapshotViewerPage'
 import FontManagementPage from '@/pages/FontManagementPage'
 import LoginPage from '@/components/auth/LoginPage'
 import { Toaster } from '@/components/ui/sonner'
@@ -20,9 +24,13 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/templates" element={<TemplateListPage />} />
           <Route path="/templates/new" element={<TemplateEditorPage />} />
+          <Route path="/templates/:id" element={<TemplateViewerPage />} />
           <Route path="/templates/:id/edit" element={<TemplateEditorPage />} />
           <Route path="/invoices/new" element={<InvoiceEditorPage />} />
+          <Route path="/invoices/:id" element={<InvoiceViewerPage />} />
           <Route path="/invoices/:id/edit" element={<InvoiceEditorPage />} />
+          <Route path="/snapshots" element={<SnapshotListPage />} />
+          <Route path="/snapshots/:id" element={<SnapshotViewerPage />} />
           <Route path="/fonts" element={<FontManagementPage />} />
         </Route>
       </Routes>

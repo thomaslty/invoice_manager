@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { pickDate } from './helpers.js';
 
 const BASE = 'http://localhost:5173';
 
@@ -7,7 +8,7 @@ test.describe('User scoping and data ownership', () => {
     await page.goto(`${BASE}/invoices/new`);
 
     // Fill required metadata
-    await page.getByRole('textbox', { name: 'Date' }).fill('01 Jan, 2026');
+    await pickDate(page);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('SCOPE-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('Scoping Test Client');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tester');
@@ -22,8 +23,8 @@ test.describe('User scoping and data ownership', () => {
     await page.getByRole('button', { name: /save/i }).click();
     await expect(page.getByText('Invoice saved')).toBeVisible({ timeout: 5000 });
 
-    // Go to dashboard
-    await page.goto(BASE);
+    // Go to dashboard with search to find the invoice reliably
+    await page.goto(`${BASE}/?search=SCOPE-001`);
     await expect(page.getByText('SCOPE-001').first()).toBeVisible();
     await expect(page.getByText('Scoping Test Client').first()).toBeVisible();
   });
@@ -31,7 +32,7 @@ test.describe('User scoping and data ownership', () => {
   test('edit invoice from dashboard, verify change persists', async ({ page }) => {
     // Create an invoice first
     await page.goto(`${BASE}/invoices/new`);
-    await page.getByRole('textbox', { name: 'Date' }).fill('02 Jan, 2026');
+    await pickDate(page);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('EDIT-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('Edit Client');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tester');
@@ -42,8 +43,8 @@ test.describe('User scoping and data ownership', () => {
     await page.getByRole('button', { name: /save/i }).click();
     await expect(page.getByText('Invoice saved')).toBeVisible({ timeout: 5000 });
 
-    // Go to dashboard and click edit
-    await page.goto(BASE);
+    // Go to dashboard with search and click edit
+    await page.goto(`${BASE}/?search=EDIT-001`);
     const row = page.getByRole('row').filter({ hasText: 'EDIT-001' });
     await row.getByRole('button').first().click();
     await page.getByRole('menuitem', { name: /edit/i }).click();
@@ -55,15 +56,18 @@ test.describe('User scoping and data ownership', () => {
     await expect(page.getByText('Invoice saved')).toBeVisible({ timeout: 5000 });
 
     // Go to dashboard and verify
-    await page.goto(BASE);
+    await page.goto(`${BASE}/?search=Updated+Client`);
     await expect(page.getByText('Updated Client').first()).toBeVisible();
   });
 
   test('delete invoice from dashboard, removed from list', async ({ page }) => {
+    // Use unique ref to avoid collision with prior test runs
+    const uniqueRef = `DEL-${Date.now()}`;
+
     // Create an invoice first
     await page.goto(`${BASE}/invoices/new`);
-    await page.getByRole('textbox', { name: 'Date' }).fill('03 Jan, 2026');
-    await page.getByRole('textbox', { name: 'Reference No.' }).fill('DEL-001');
+    await pickDate(page);
+    await page.getByRole('textbox', { name: 'Reference No.' }).fill(uniqueRef);
     await page.getByRole('textbox', { name: 'Client' }).fill('Delete Client');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tester');
     await page.getByRole('textbox', { name: 'Job Title' }).fill('Del Job');
@@ -73,10 +77,10 @@ test.describe('User scoping and data ownership', () => {
     await page.getByRole('button', { name: /save/i }).click();
     await expect(page.getByText('Invoice saved')).toBeVisible({ timeout: 5000 });
 
-    // Go to dashboard and delete
-    await page.goto(BASE);
-    await expect(page.getByText('DEL-001')).toBeVisible();
-    const row = page.getByRole('row').filter({ hasText: 'DEL-001' });
+    // Go to dashboard with search and delete
+    await page.goto(`${BASE}/?search=${uniqueRef}`);
+    await expect(page.getByText(uniqueRef)).toBeVisible();
+    const row = page.getByRole('row').filter({ hasText: uniqueRef });
     await row.getByRole('button').first().click();
     await page.getByRole('menuitem', { name: /delete/i }).click();
 
@@ -87,7 +91,7 @@ test.describe('User scoping and data ownership', () => {
     }
 
     // Verify removed
-    await expect(page.getByText('DEL-001')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(uniqueRef)).not.toBeVisible({ timeout: 5000 });
   });
 
   test('system font has delete button disabled (canDelete: false)', async ({ page }) => {
@@ -122,8 +126,8 @@ test.describe('User scoping and data ownership', () => {
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: /add font/i }).click();
 
-    // Verify font appears
-    await expect(page.getByText('Playfair Display')).toBeVisible({ timeout: 5000 });
+    // Verify font appears (use .first() since font may exist from prior runs)
+    await expect(page.getByText('Playfair Display').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('DELETE /api/fonts/:id for system font returns 403', async ({ request }) => {

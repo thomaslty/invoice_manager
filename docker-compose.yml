@@ -15,6 +15,7 @@ services:
       retries: 5
 
   invoice_manager:
+    container_name: invoice_manager
     image: ghcr.io/thomaslty/invoice_manager:latest
     restart: unless-stopped
     depends_on:

@@ -106,6 +106,7 @@ export default function ItemsTable({
   onReorderItem,
   onSetCurrency,
   grandTotal,
+  readOnly = false,
 }) {
   const categories = items.categories;
   const hasMultipleCategories = categories.length > 1;
@@ -119,21 +120,23 @@ export default function ItemsTable({
   return (
     <div className="space-y-4">
       {/* Currency */}
-      <div className="space-y-1.5">
-        <Label className="text-sm">Currency</Label>
-        <Select value={items.currency} onValueChange={onSetCurrency}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Select currency" />
-          </SelectTrigger>
-          <SelectContent>
-            {CURRENCY_CODES.map((code) => (
-              <SelectItem key={code} value={code}>
-                {CURRENCIES[code].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!readOnly && (
+        <div className="space-y-1.5">
+          <Label className="text-sm">Currency</Label>
+          <Select value={items.currency} onValueChange={onSetCurrency}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCY_CODES.map((code) => (
+                <SelectItem key={code} value={code}>
+                  {CURRENCIES[code].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Categories */}
       {categories.map((category, catIndex) => {
@@ -163,15 +166,18 @@ export default function ItemsTable({
                     onChange={(e) => onUpdateCategoryName(catIndex, e.target.value)}
                     placeholder={`Category ${catIndex + 1} name`}
                     className="flex-1 font-medium"
+                    readOnly={readOnly}
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemoveCategory(catIndex)}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!readOnly && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onRemoveCategory(catIndex)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </>
               )}
               {!hasMultipleCategories && (
@@ -180,6 +186,7 @@ export default function ItemsTable({
                   onChange={(e) => onUpdateCategoryName(catIndex, e.target.value)}
                   placeholder="Category name (optional)"
                   className="flex-1"
+                  readOnly={readOnly}
                 />
               )}
             </div>
@@ -202,11 +209,18 @@ export default function ItemsTable({
                         <th className="px-2 py-1.5 text-right font-medium w-28">
                           Total ({currencySymbol})
                         </th>
-                        <th className="w-9"></th>
+                        {!readOnly && <th className="w-9"></th>}
                       </tr>
                     </thead>
                     <tbody>
-                      {category.items.map((item, itemIndex) => (
+                      {category.items.map((item, itemIndex) => readOnly ? (
+                        <tr key={item.id} className="border-b border-border last:border-b-0">
+                          <td className="px-2 py-1.5 text-sm text-muted-foreground w-14">{itemIndex + 1}</td>
+                          <td className="px-2 py-1.5 text-sm">{item.description}</td>
+                          <td className="px-2 py-1.5 text-sm">{item.qty}</td>
+                          <td className="px-2 py-1.5 text-sm text-right">{Number(item.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ) : (
                         <SortableItemRow
                           key={item.id}
                           id={item.id}
@@ -225,15 +239,17 @@ export default function ItemsTable({
             </DndContext>
 
             {/* Add item button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onAddItem(catIndex)}
-              className="w-full"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Add Item
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAddItem(catIndex)}
+                className="w-full"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add Item
+              </Button>
+            )}
 
             {/* Category subtotal (for named categories) */}
             {category.name && (
@@ -254,15 +270,17 @@ export default function ItemsTable({
       })}
 
       {/* Add category button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onAddCategory}
-        className="w-full"
-      >
-        <Plus className="h-3.5 w-3.5 mr-1.5" />
-        Add Category
-      </Button>
+      {!readOnly && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onAddCategory}
+          className="w-full"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          Add Category
+        </Button>
+      )}
 
       {/* Grand total */}
       <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5">

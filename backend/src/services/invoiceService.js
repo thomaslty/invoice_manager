@@ -1,6 +1,6 @@
 import { db } from '../db/index.js';
 import { invoices } from '../db/schema.js';
-import { eq, ilike, or, and, gte, lte, desc, asc } from 'drizzle-orm';
+import { eq, ilike, or, and, gte, lte, desc, asc, count } from 'drizzle-orm';
 
 function extractFields(jsonData) {
   const meta = jsonData?.sections?.metadata?.fields || {};
@@ -19,7 +19,7 @@ function extractFields(jsonData) {
   };
 }
 
-export async function listInvoices({ userId, search, sortBy, sortOrder, dateFrom, dateTo } = {}) {
+export async function listInvoices({ userId, search, sortBy, sortOrder, dateFrom, dateTo, page = 1, limit = 20 } = {}) {
   const conditions = [eq(invoices.userId, userId)];
 
   if (search) {
@@ -43,8 +43,14 @@ export async function listInvoices({ userId, search, sortBy, sortOrder, dateFrom
   }[sortBy] || invoices.createdAt;
 
   const orderFn = sortOrder === 'asc' ? asc : desc;
+  const offset = (page - 1) * limit;
 
-  return db.select().from(invoices).where(where).orderBy(orderFn(sortColumn));
+  const [data, [{ total }]] = await Promise.all([
+    db.select().from(invoices).where(where).orderBy(orderFn(sortColumn)).limit(limit).offset(offset),
+    db.select({ total: count() }).from(invoices).where(where),
+  ]);
+
+  return { data, total };
 }
 
 export async function getInvoiceById(id, userId) {

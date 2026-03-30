@@ -1,4 +1,4 @@
-import { FileText, LayoutTemplate, Type, PanelLeft } from 'lucide-react'
+import { FileText, LayoutTemplate, Camera, Type, PanelLeft } from 'lucide-react'
 import { useLocation, Link } from 'react-router-dom'
 import {
   Sidebar,
@@ -17,7 +17,8 @@ import { NavUser } from '@/components/layout/NavUser'
 
 const navItems = [
   { title: 'Invoices', path: '/', icon: FileText },
-  // { title: 'Templates', path: '/templates', icon: LayoutTemplate },
+  { title: 'Templates', path: '/templates', icon: LayoutTemplate },
+  { title: 'Snapshots', path: '/snapshots', icon: Camera },
   { title: 'Fonts', path: '/fonts', icon: Type },
 ]
 

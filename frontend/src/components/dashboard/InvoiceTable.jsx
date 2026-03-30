@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { format } from "date-fns";
 import {
@@ -42,6 +42,7 @@ import {
   ArrowDownIcon,
   ArrowUpDownIcon,
   MoreHorizontalIcon,
+  EyeIcon,
   PencilIcon,
   DownloadIcon,
   CameraIcon,
@@ -49,7 +50,7 @@ import {
   HistoryIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import SnapshotList from "./SnapshotList";
+import PaginationControls from "@/components/ui/pagination-controls";
 
 const SORTABLE_COLUMNS = [
   { key: "ref_no", label: "Ref No" },
@@ -88,13 +89,24 @@ function formatDate(dateStr) {
 
 export default function InvoiceTable() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read state from URL params
+  const sortBy = searchParams.get("sort_by") || "date";
+  const sortOrder = searchParams.get("sort_order") || "desc";
+  const dateFrom = searchParams.get("date_from") || "";
+  const dateTo = searchParams.get("date_to") || "";
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 20;
+  const urlSearch = searchParams.get("search") || "";
+
+  // Local search input state for debouncing
+  const [searchInput, setSearchInput] = useState(urlSearch);
+  const debounceRef = useRef(null);
+
   const [invoices, setInvoices] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
 
   // Snapshot dialog state
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
@@ -107,42 +119,63 @@ export default function InvoiceTable() {
   const [deleteInvoiceId, setDeleteInvoiceId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Snapshot list state
-  const [snapshotListOpen, setSnapshotListOpen] = useState(false);
-  const [snapshotListInvoiceId, setSnapshotListInvoiceId] = useState(null);
+  // Sync local search input when URL changes externally (e.g., browser back)
+  useEffect(() => {
+    setSearchInput(urlSearch);
+  }, [urlSearch]);
 
-  // Debounce ref
-  const debounceRef = useRef(null);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  // Debounce search input
+  // Debounce search input → update URL param
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
+      if (searchInput !== urlSearch) {
+        updateParams({ search: searchInput || null, page: null });
+      }
     }, 300);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search]);
+  }, [searchInput]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function updateParams(updates) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === undefined || value === "") {
+          next.delete(key);
+        } else {
+          next.set(key, String(value));
+        }
+      }
+      // Remove defaults to keep URL clean
+      if (next.get("sort_by") === "date") next.delete("sort_by");
+      if (next.get("sort_order") === "desc") next.delete("sort_order");
+      if (next.get("page") === "1") next.delete("page");
+      if (next.get("limit") === "20") next.delete("limit");
+      return next;
+    }, { replace: true });
+  }
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (debouncedSearch) params.search = debouncedSearch;
+      if (urlSearch) params.search = urlSearch;
       if (sortBy) params.sort_by = sortBy;
       if (sortOrder) params.sort_order = sortOrder;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
-      const data = await api.getInvoices(params);
-      setInvoices(data);
+      params.page = page;
+      params.limit = limit;
+      const result = await api.getInvoices(params);
+      setInvoices(result.data);
+      setTotal(result.total);
     } catch (err) {
       console.error("Failed to fetch invoices:", err);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, sortBy, sortOrder, dateFrom, dateTo]);
+  }, [urlSearch, sortBy, sortOrder, dateFrom, dateTo, page, limit]);
 
   useEffect(() => {
     fetchInvoices();
@@ -150,10 +183,9 @@ export default function InvoiceTable() {
 
   const handleSort = (columnKey) => {
     if (sortBy === columnKey) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+      updateParams({ sort_order: sortOrder === "asc" ? "desc" : "asc", page: null });
     } else {
-      setSortBy(columnKey);
-      setSortOrder("asc");
+      updateParams({ sort_by: columnKey, sort_order: "asc", page: null });
     }
   };
 
@@ -191,6 +223,8 @@ export default function InvoiceTable() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
   return (
     <div className="space-y-4">
       {/* Search and Date Filters */}
@@ -199,8 +233,8 @@ export default function InvoiceTable() {
           <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search by reference or client..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-8"
           />
         </div>
@@ -210,7 +244,7 @@ export default function InvoiceTable() {
             <Input
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => updateParams({ date_from: e.target.value || null, page: null })}
               className="w-36"
             />
           </div>
@@ -219,7 +253,7 @@ export default function InvoiceTable() {
             <Input
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => updateParams({ date_to: e.target.value || null, page: null })}
               className="w-36"
             />
           </div>
@@ -227,7 +261,7 @@ export default function InvoiceTable() {
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              onClick={() => updateParams({ date_from: null, date_to: null, page: null })}
             >
               Clear
             </Button>
@@ -271,7 +305,7 @@ export default function InvoiceTable() {
             ) : invoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                  {debouncedSearch || dateFrom || dateTo
+                  {urlSearch || dateFrom || dateTo
                     ? "No invoices match your filters."
                     : "No invoices yet. Create your first invoice to get started."}
                 </TableCell>
@@ -291,7 +325,13 @@ export default function InvoiceTable() {
                           <span className="sr-only">Actions</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="min-w-48">
+                        <DropdownMenuItem
+                          onClick={() => navigate(`/invoices/${invoice.id}`)}
+                        >
+                          <EyeIcon />
+                          View
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
                         >
@@ -304,7 +344,7 @@ export default function InvoiceTable() {
                           <DownloadIcon />
                           Download PDF
                         </DropdownMenuItem>
-                        {/* <DropdownMenuItem
+                        <DropdownMenuItem
                           onClick={() => {
                             setSnapshotInvoiceId(invoice.id);
                             setSnapshotName("");
@@ -315,14 +355,11 @@ export default function InvoiceTable() {
                           Save as Snapshot
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => {
-                            setSnapshotListInvoiceId(invoice.id);
-                            setSnapshotListOpen(true);
-                          }}
+                          onClick={() => navigate(`/snapshots?invoice=${invoice.id}`)}
                         >
                           <HistoryIcon />
                           View Snapshots
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
@@ -343,6 +380,16 @@ export default function InvoiceTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        limit={limit}
+        total={total}
+        onPageChange={(p) => updateParams({ page: p })}
+        onLimitChange={(l) => updateParams({ limit: l, page: null })}
+      />
 
       {/* Save Snapshot Dialog */}
       <Dialog open={snapshotDialogOpen} onOpenChange={setSnapshotDialogOpen}>
@@ -393,13 +440,6 @@ export default function InvoiceTable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Snapshot List */}
-      <SnapshotList
-        invoiceId={snapshotListInvoiceId}
-        open={snapshotListOpen}
-        onOpenChange={setSnapshotListOpen}
-      />
     </div>
   );
 }

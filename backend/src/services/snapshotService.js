@@ -1,6 +1,22 @@
 import { db } from '../db/index.js';
 import { invoiceSnapshots, invoices } from '../db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
+
+export async function listAllByUser(userId) {
+  return db.select({
+    id: invoiceSnapshots.id,
+    name: invoiceSnapshots.name,
+    invoiceId: invoiceSnapshots.invoiceId,
+    fontId: invoiceSnapshots.fontId,
+    createdAt: invoiceSnapshots.createdAt,
+    refNo: invoices.refNo,
+    clientName: invoices.clientName,
+  })
+    .from(invoiceSnapshots)
+    .innerJoin(invoices, eq(invoiceSnapshots.invoiceId, invoices.id))
+    .where(eq(invoices.userId, userId))
+    .orderBy(desc(invoiceSnapshots.createdAt));
+}
 
 export async function verifySnapshotOwnership(snapshotId, userId) {
   const [row] = await db.select({ invoiceUserId: invoices.userId })

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
+import { pickDate } from './helpers.js';
 
 const BASE = 'http://localhost:5173';
 
@@ -9,7 +10,7 @@ test.describe('Invoice Editor', () => {
     await page.goto(`${BASE}/invoices/new`);
 
     // Fill metadata
-    await page.getByRole('textbox', { name: 'Date' }).fill('30 Sep, 2022');
+    await pickDate(page);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('Inv-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('NextStation');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tom');

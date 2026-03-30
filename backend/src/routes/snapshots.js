@@ -7,6 +7,9 @@ const router = Router();
 router.get('/invoices/:invoiceId/snapshots', snapshotsController.listByInvoice);
 router.post('/invoices/:invoiceId/snapshots', snapshotsController.create);
 
+// All user snapshots
+router.get('/snapshots', snapshotsController.listAll);
+
 // Direct snapshot access
 router.get('/snapshots/:id', snapshotsController.getById);
 router.delete('/snapshots/:id', snapshotsController.remove);

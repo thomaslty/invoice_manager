@@ -43,6 +43,7 @@ export const api = {
   getInvoicePdfUrl: (id) => `/api/invoices/${id}/pdf`,
 
   // Snapshots
+  getAllSnapshots: () => request('/snapshots'),
   getSnapshots: (invoiceId) => request(`/invoices/${invoiceId}/snapshots`),
   createSnapshot: (invoiceId, data) => request(`/invoices/${invoiceId}/snapshots`, { method: 'POST', body: JSON.stringify(data) }),
   getSnapshot: (id) => request(`/snapshots/${id}`),

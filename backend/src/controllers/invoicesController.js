@@ -21,16 +21,18 @@ function validateInvoiceData(jsonData) {
 }
 
 export async function list(req, res) {
-  const { search, sort_by, sort_order, date_from, date_to } = req.query;
-  const invoices = await invoiceService.listInvoices({
+  const { search, sort_by, sort_order, date_from, date_to, page, limit } = req.query;
+  const result = await invoiceService.listInvoices({
     userId: req.user.id,
     search,
     sortBy: sort_by,
     sortOrder: sort_order,
     dateFrom: date_from,
     dateTo: date_to,
+    page: page ? Number(page) : undefined,
+    limit: limit ? Number(limit) : undefined,
   });
-  res.json(invoices);
+  res.json(result);
 }
 
 export async function getById(req, res) {
