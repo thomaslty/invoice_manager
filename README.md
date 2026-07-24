@@ -14,31 +14,36 @@ A self-hosted invoice management app with live preview, PDF export, custom fonts
 
 ## Quick Start
 
-The same `docker-compose.yml` builds and runs the app for both local use and production:
-
 ```bash
 git clone <repo-url> && cd invoice_manager
-cp .env.example .env  # configure OIDC (leave blank for BYPASS_LOGIN local use)
+cp .env.example .env   # configure OIDC, or leave blank and set BYPASS_LOGIN=true for local use
 docker compose up -d --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The container runs schema migrations, seeds default fonts, and starts automatically. State persists in local folders next to the compose file — `./data` (SQLite database), `./uploads` (signatures), `./fonts` (uploaded fonts). There is no separate database service.
+Open [http://localhost:3000](http://localhost:3000). The container runs schema migrations, seeds default fonts, and starts automatically — there is no separate database service.
+
+State persists in local folders next to the compose file: `./data` (SQLite database), `./uploads` (signatures), `./fonts` (uploaded fonts).
+
+To run a pinned release instead of building locally, replace the service's `build:` block with a pre-built image:
+
+```yaml
+    image: ghcr.io/thomaslty/invoice_manager:v0.3.2
+```
 
 ### Environment Variables
 
-Copy `.env.example` and configure as needed. Key variables:
+Copy `.env.example` and configure as needed. Common variables:
 
 | Variable | Description |
 |---|---|
-| `DATABASE_PATH` | SQLite file path in the container |
-| `MIGRATE_FROM_POSTGRES_URL` | One-time Postgres import (see Migrating below) |
 | `OIDC_DISCOVERY_URL` | OIDC provider discovery URL |
 | `OIDC_CLIENT_ID` | OIDC client ID |
 | `OIDC_CLIENT_SECRET` | OIDC client secret |
 | `OIDC_REDIRECT_URI` | OAuth callback URL (optional, auto-detected) |
-| `BYPASS_LOGIN` | Set `true` to skip OIDC (dev only) |
+| `BYPASS_LOGIN` | `true` skips OIDC, auto-logs in as admin (dev only) |
+| `MIGRATE_FROM_POSTGRES_URL` | One-time Postgres import (see below) |
 
-See `.env.example` for the full list.
+`DATABASE_PATH` is an optional override; by default the DB lives at `data/invoice.db` inside the container, on the `./data` mount. See `.env.example` for the full list.
 
 ## Development
 
@@ -72,14 +77,72 @@ npm run test:migration
 
 ## Migrating existing Postgres data to SQLite
 
-To move data from a previous Postgres deployment, point the container at it once:
+A one-time import copies data from an old Postgres deployment into SQLite. Set `MIGRATE_FROM_POSTGRES_URL` and boot once — the entrypoint runs the import before starting the app. It is **guarded** (skips tables that already contain rows) and **non-fatal** (if Postgres is unreachable it warns and starts on SQLite), so it's safe to leave set; remove it after the first successful import. Your old Postgres is only read, never modified.
+
+The URL must be reachable **from inside the container**. Note: `postgres` as a hostname only resolves if a service by that name is on the same compose network — use the actual host otherwise.
+
+### Case A — old Postgres is running on a reachable host
 
 ```bash
-MIGRATE_FROM_POSTGRES_URL=postgresql://user:pass@old-host:5432/invoice_manager \
-  docker compose up -d --build
+MIGRATE_FROM_POSTGRES_URL=postgresql://user:pass@HOST:5432/invoice_manager \
+  docker compose up -d
 ```
 
-The import is guarded (skips tables that already have rows), so it is safe to leave set — but remove it after the first successful boot. The old Postgres is read-only during import and remains a rollback.
+Use the machine's LAN IP, or `host.docker.internal` if Postgres runs on the Docker host.
+
+### Case B — old data only exists as a Docker volume
+
+Run Postgres alongside the app on one network just for the cutover. Find the old volume:
+
+```bash
+docker volume ls | grep -iE 'pg|postgres'
+```
+
+Create `docker-compose.cutover.yml` (fill in the volume name):
+
+```yaml
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: invoice_user
+      POSTGRES_PASSWORD: invoice_pass
+      POSTGRES_DB: invoice_manager
+    volumes:
+      - oldpg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invoice_user -d invoice_manager"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    image: ghcr.io/thomaslty/invoice_manager:v0.3.2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    environment:
+      MIGRATE_FROM_POSTGRES_URL: postgresql://invoice_user:invoice_pass@postgres:5432/invoice_manager
+    env_file: .env
+    volumes:
+      - ./data:/app/backend/data
+      - ./uploads:/app/backend/uploads
+      - ./fonts:/app/backend/fonts
+
+volumes:
+  oldpg:
+    external: true
+    name: YOUR_OLD_PG_VOLUME
+```
+
+```bash
+docker compose -f docker-compose.cutover.yml up -d       # imports once, waits for Postgres
+docker compose -f docker-compose.cutover.yml logs -f app # watch for "Import complete"
+docker compose -f docker-compose.cutover.yml down        # stop the cutover stack
+docker compose up -d                                     # back to the SQLite-only compose
+```
 
 ## Migrating from Docker volumes to local folders
 
