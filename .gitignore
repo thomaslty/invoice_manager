@@ -18,8 +18,10 @@ backend/uploads/*
 backend/fonts/*
 !backend/fonts/.gitkeep
 
-# data folder
+# docker compose bind-mount folders (sqlite db, uploaded signatures, local fonts)
 data/
+/uploads/
+/fonts/
 
 # playwright
 .playwright-mcp/

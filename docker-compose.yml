@@ -7,7 +7,6 @@ services:
     ports:
       - "3000:80"
     environment:
-      DATABASE_PATH: ${DATABASE_PATH:-/app/backend/data/invoice.db}
       PORT: 3000
       # One-time cutover only: point at an existing Postgres to import its data,
       # then unset. Leave blank for fresh/local installs.
@@ -24,11 +23,6 @@ services:
       SESSION_MAX_AGE: ${SESSION_MAX_AGE:-}
       BYPASS_LOGIN: ${BYPASS_LOGIN:-}
     volumes:
-      - dbdata:/app/backend/data
-      - uploads:/app/backend/uploads
-      - fonts:/app/backend/fonts
-
-volumes:
-  dbdata:
-  uploads:
-  fonts:
+      - ./data:/app/backend/data
+      - ./uploads:/app/backend/uploads
+      - ./fonts:/app/backend/fonts

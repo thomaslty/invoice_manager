@@ -1,4 +1,6 @@
 services:
+  # Throwaway Postgres source for the pg -> sqlite data-migration test
+  # (backend/test/migrate-pg-to-sqlite.test.js).
   postgres:
     image: postgres:18
     restart: unless-stopped
@@ -16,5 +18,30 @@ services:
       timeout: 3s
       retries: 5
 
+  # Legacy layout (pre-v0.3.1): the app backed by Docker NAMED volumes.
+  # Boot this on port 3001 to reproduce old-style state, create some data, then
+  # follow the README "Migrating from Docker volumes to local folders" steps to
+  # copy the volumes into ./data, ./uploads, ./fonts and verify with the main
+  # `docker compose up`. Uses the same project name so the volumes are named
+  # invoice_manager_dbdata / _uploads / _fonts, matching the README commands.
+  app-legacy:
+    build:
+      context: .
+      target: production
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    environment:
+      DATABASE_PATH: /app/backend/data/invoice.db
+      PORT: 3000
+      BYPASS_LOGIN: "true"
+    volumes:
+      - dbdata:/app/backend/data
+      - uploads:/app/backend/uploads
+      - fonts:/app/backend/fonts
+
 volumes:
   pgdata_migration:
+  dbdata:
+  uploads:
+  fonts:

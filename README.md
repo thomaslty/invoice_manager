@@ -22,7 +22,7 @@ cp .env.example .env  # configure OIDC (leave blank for BYPASS_LOGIN local use)
 docker compose up -d --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The container runs schema migrations, seeds default fonts, and starts automatically. Data is stored in an embedded SQLite database on the `dbdata` volume — there is no separate database service.
+Open [http://localhost:3000](http://localhost:3000). The container runs schema migrations, seeds default fonts, and starts automatically. State persists in local folders next to the compose file — `./data` (SQLite database), `./uploads` (signatures), `./fonts` (uploaded fonts). There is no separate database service.
 
 ### Environment Variables
 
@@ -80,6 +80,32 @@ MIGRATE_FROM_POSTGRES_URL=postgresql://user:pass@old-host:5432/invoice_manager \
 ```
 
 The import is guarded (skips tables that already have rows), so it is safe to leave set — but remove it after the first successful boot. The old Postgres is read-only during import and remains a rollback.
+
+## Migrating from Docker volumes to local folders
+
+Earlier versions stored state in Docker named volumes (`dbdata`, `uploads`, `fonts`). To move that data into the local `./data`, `./uploads`, and `./fonts` folders used now:
+
+```bash
+# 1. Stop the app (keep the volumes)
+docker compose down
+
+# 2. Copy each named volume's contents into the matching local folder.
+#    Replace the "invoice_manager_" prefix if your compose project name differs
+#    (check with: docker volume ls | grep -E 'dbdata|uploads|fonts').
+for v in dbdata:data uploads:uploads fonts:fonts; do
+  vol="invoice_manager_${v%%:*}"; dir="${v##*:}"
+  mkdir -p "$dir"
+  docker run --rm -v "$vol":/from -v "$PWD/$dir":/to alpine sh -c 'cp -a /from/. /to/'
+done
+
+# 3. Start again — now backed by the local folders
+docker compose up -d
+
+# 4. Once verified, remove the old volumes
+docker volume rm invoice_manager_dbdata invoice_manager_uploads invoice_manager_fonts
+```
+
+Stop the app before copying so the SQLite WAL is checkpointed and the copy is consistent.
 
 ## Tech Stack
 
