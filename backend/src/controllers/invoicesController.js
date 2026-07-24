@@ -64,6 +64,16 @@ export async function remove(req, res) {
   res.json({ success: true });
 }
 
+// Build an RFC 6266 Content-Disposition for a PDF download. The header value
+// must be pure ASCII (Node's setHeader rejects bytes > 0x7F), so non-ASCII
+// reference numbers (e.g. Chinese) go into a percent-encoded `filename*` while
+// `filename` carries an ASCII-safe fallback.
+export function contentDispositionForPdf(refNoOrId) {
+  const filename = `invoice-${refNoOrId}.pdf`;
+  const asciiFallback = filename.replace(/[^\w.\-]+/g, '_');
+  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
+}
+
 export async function downloadPdf(req, res) {
   const invoice = await invoiceService.getInvoiceById(Number(req.params.id), req.user.id);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
@@ -72,10 +82,9 @@ export async function downloadPdf(req, res) {
   const html = await previewService.generatePreviewHtml(invoice.jsonData, invoice.fontId, baseUrl);
   const pdfBuffer = await pdfService.generatePdf(html);
 
-  const filename = `invoice-${invoice.refNo || invoice.id}.pdf`;
   res.set({
     'Content-Type': 'application/pdf',
-    'Content-Disposition': `attachment; filename="${filename}"`,
+    'Content-Disposition': contentDispositionForPdf(invoice.refNo || invoice.id),
   });
   res.send(pdfBuffer);
 }

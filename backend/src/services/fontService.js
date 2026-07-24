@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { safeUploadFilename } from '../lib/uploadFilename.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FONTS_DIR = path.join(__dirname, '../../fonts');
@@ -23,7 +24,7 @@ export async function createFont(data, uploadedBy) {
 }
 
 export async function createFontWithFile(file, name, family, uploadedBy) {
-  const filename = `${Date.now()}-${file.originalname}`;
+  const filename = safeUploadFilename('', file.originalname, '.ttf');
   const filePath = path.join(FONTS_DIR, filename);
   await fs.writeFile(filePath, file.buffer);
 
