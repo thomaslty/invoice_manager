@@ -17,6 +17,7 @@ FROM node:22-slim AS base
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-liberation \
+    fonts-noto-cjk \
     libnss3 \
     libatk-bridge2.0-0 \
     libx11-xcb1 \

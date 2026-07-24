@@ -297,9 +297,13 @@ export function renderInvoiceHtml({ jsonData, fontInfo, baseUrl = '' }) {
   }
 
   const fontFaceRule = buildFontFace(resolvedFontInfo);
+  // CJK fallback: Chromium (in the container) does per-glyph fallback down this
+  // chain, so Chinese/CJK codepoints resolve to Noto CJK for ANY selected font.
+  // TC before SC suits the HK/TW audience for Han-unified variants.
+  const cjkFallback = "'Noto Sans CJK TC', 'Noto Sans CJK SC'";
   const fontFamily = resolvedFontInfo.family
-    ? `'${resolvedFontInfo.family}', Arial, Helvetica, sans-serif`
-    : 'Arial, Helvetica, sans-serif';
+    ? `'${resolvedFontInfo.family}', Arial, Helvetica, ${cjkFallback}, sans-serif`
+    : `Arial, Helvetica, ${cjkFallback}, sans-serif`;
 
   // Build sections
   const headerHtml = renderHeader(s.header);
@@ -489,6 +493,7 @@ export function renderInvoiceHtml({ jsonData, fontInfo, baseUrl = '' }) {
 
     .item-row .col-desc {
       padding-right: 12px;
+      white-space: pre-line;
     }
 
     .item-row .col-qty {

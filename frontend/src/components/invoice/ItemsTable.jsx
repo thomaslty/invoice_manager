@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -46,7 +47,7 @@ function SortableItemRow({ id, item, itemIndex, catIndex, onUpdateItem, onRemove
 
   return (
     <tr ref={setNodeRef} style={style} className="border-b border-border last:border-b-0">
-      <td className="px-1 py-1 w-10">
+      <td className="px-1 py-1 w-10 align-top">
         <div className="flex items-center gap-0.5">
           <button
             type="button"
@@ -59,29 +60,30 @@ function SortableItemRow({ id, item, itemIndex, catIndex, onUpdateItem, onRemove
           <span className="text-xs text-muted-foreground w-4 text-center">{itemIndex + 1}</span>
         </div>
       </td>
-      <td className="px-1 py-1">
-        <Input
+      <td className="px-1 py-1 align-top">
+        <Textarea
           value={item.description}
           onChange={(e) => onUpdateItem(catIndex, itemIndex, 'description', e.target.value)}
           placeholder="Item description"
-          className="h-7 text-sm px-1.5"
+          rows={1}
+          className="min-h-7 text-sm px-1.5 py-1 resize-y"
         />
       </td>
-      <td className="px-1 py-1">
+      <td className="px-1 py-1 align-top">
         <Input
           value={item.qty}
           onChange={(e) => onUpdateItem(catIndex, itemIndex, 'qty', Number(e.target.value) || 0)}
           className="h-7 text-sm px-1.5"
         />
       </td>
-      <td className="px-1 py-1">
+      <td className="px-1 py-1 align-top">
         <Input
           value={item.total}
           onChange={(e) => onUpdateItem(catIndex, itemIndex, 'total', Number(e.target.value) || 0)}
           className="h-7 text-sm px-1.5 text-right"
         />
       </td>
-      <td className="px-1 py-1">
+      <td className="px-1 py-1 align-top">
         <Button
           variant="ghost"
           size="icon"
