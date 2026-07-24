@@ -12,7 +12,7 @@ const router = Router();
 
 router.get('/health', async (req, res) => {
   try {
-    await db.execute(sql`SELECT 1`);
+    await db.get(sql`SELECT 1`);
     res.json({ status: 'ok', db: 'connected' });
   } catch (err) {
     res.status(503).json({ status: 'error', db: 'disconnected', message: err.message });

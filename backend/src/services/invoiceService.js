@@ -1,6 +1,6 @@
 import { db } from '../db/index.js';
 import { invoices } from '../db/schema.js';
-import { eq, ilike, or, and, gte, lte, desc, asc } from 'drizzle-orm';
+import { eq, like, or, and, gte, lte, desc, asc } from 'drizzle-orm';
 
 function extractFields(jsonData) {
   const meta = jsonData?.sections?.metadata?.fields || {};
@@ -25,8 +25,8 @@ export async function listInvoices({ userId, search, sortBy, sortOrder, dateFrom
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(or(
-      ilike(invoices.refNo, pattern),
-      ilike(invoices.clientName, pattern)
+      like(invoices.refNo, pattern),
+      like(invoices.clientName, pattern)
     ));
   }
   if (dateFrom) conditions.push(gte(invoices.date, dateFrom));

@@ -1,57 +1,58 @@
-import { pgTable, serial, varchar, text, timestamp, integer, numeric, date, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sqliteTable, integer, text, numeric, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull(),
-  name: varchar('name', { length: 255 }),
-  oidcSub: varchar('oidc_sub', { length: 255 }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  name: text('name'),
+  oidcSub: text('oidc_sub'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 }, (table) => [
   uniqueIndex('users_email_idx').on(table.email),
 ]);
 
-export const sessions = pgTable('sessions', {
-  id: varchar('id', { length: 64 }).primaryKey(),
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 }, (table) => [
   index('sessions_expires_at_idx').on(table.expiresAt),
 ]);
 
-export const fonts = pgTable('fonts', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  family: varchar('family', { length: 255 }).notNull(),
-  source: varchar('source', { length: 20 }).notNull(), // 'system' | 'remote' | 'local'
+export const fonts = sqliteTable('fonts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  family: text('family').notNull(),
+  source: text('source').notNull(), // 'system' | 'remote' | 'local'
   filePath: text('file_path'),
   url: text('url'),
   uploadedBy: integer('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
-export const templates = pgTable('templates', {
-  id: serial('id').primaryKey(),
+export const templates = sqliteTable('templates', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  name: varchar('name', { length: 255 }).notNull(),
+  name: text('name').notNull(),
   fontId: integer('font_id').references(() => fonts.id, { onDelete: 'set null' }),
-  jsonData: jsonb('json_data').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  jsonData: text('json_data', { mode: 'json' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
-export const invoices = pgTable('invoices', {
-  id: serial('id').primaryKey(),
+export const invoices = sqliteTable('invoices', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   templateId: integer('template_id').references(() => templates.id, { onDelete: 'set null' }),
   fontId: integer('font_id').references(() => fonts.id, { onDelete: 'set null' }),
-  refNo: varchar('ref_no', { length: 100 }),
-  clientName: varchar('client_name', { length: 255 }),
-  date: date('date'),
-  totalAmount: numeric('total_amount', { precision: 12, scale: 2 }),
-  jsonData: jsonb('json_data').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  refNo: text('ref_no'),
+  clientName: text('client_name'),
+  date: text('date'),
+  totalAmount: numeric('total_amount'),
+  jsonData: text('json_data', { mode: 'json' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 }, (table) => [
   index('invoices_user_id_idx').on(table.userId),
   index('invoices_ref_no_idx').on(table.refNo),
@@ -59,11 +60,11 @@ export const invoices = pgTable('invoices', {
   index('invoices_date_idx').on(table.date),
 ]);
 
-export const invoiceSnapshots = pgTable('invoice_snapshots', {
-  id: serial('id').primaryKey(),
+export const invoiceSnapshots = sqliteTable('invoice_snapshots', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   invoiceId: integer('invoice_id').references(() => invoices.id, { onDelete: 'cascade' }).notNull(),
-  name: varchar('name', { length: 255 }).notNull(),
+  name: text('name').notNull(),
   fontId: integer('font_id').references(() => fonts.id, { onDelete: 'set null' }),
-  jsonData: jsonb('json_data').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  jsonData: text('json_data', { mode: 'json' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });

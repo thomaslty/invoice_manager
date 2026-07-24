@@ -1,26 +1,12 @@
 {
   "version": "7",
-  "dialect": "postgresql",
+  "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1773022507301,
-      "tag": "0000_exotic_sister_grimm",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1773022717915,
-      "tag": "0001_third_cassandra_nova",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1774730232019,
-      "tag": "0002_military_jack_murdock",
+      "version": "6",
+      "when": 1784865743120,
+      "tag": "0000_rapid_triton",
       "breakpoints": true
     }
   ]

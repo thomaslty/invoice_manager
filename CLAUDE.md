@@ -5,10 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-# Full dev stack (postgres + backend + frontend)
-docker compose -f docker-compose.dev.yml up -d --build
+# Full stack in one container (build-only, no hot reload) — same file for local + prod
+docker compose up -d --build
 
-# Backend (port 3000)
+# Backend (port 3000) — native, for hot-reload coding; SQLite file auto-created
 cd backend && npm run dev
 
 # Frontend (port 5173, proxies /api to backend)
@@ -17,7 +17,11 @@ cd frontend && npm run dev
 # Database migrations (NEVER write SQL by hand)
 cd backend && npm run db:generate   # generate migration from schema changes
 cd backend && npm run db:migrate    # apply migrations
-cd backend && npm run db:seed       # seed default fonts
+cd backend && npm run db:seed       # seed default fonts (idempotent)
+
+# Backend tests (node:test)
+cd backend && npm test                 # SQLite persistence tests (no external services)
+cd backend && npm run test:migration   # needs: docker compose -f docker-compose.migration_test.yml up -d
 
 # Frontend
 cd frontend && npm run build        # production build
@@ -42,18 +46,23 @@ cd e2e && npx playwright test --config playwright.config.js
 
 **Monorepo** with independent `frontend/` and `backend/` packages (no npm workspaces, no root package.json).
 
-### Backend: Express 5 + Drizzle ORM + PostgreSQL 18
+### Backend: Express 5 + Drizzle ORM + SQLite (better-sqlite3)
 
 Layered architecture: **Routes → Controllers → Services → DB**
 
-- `backend/src/db/schema.js` — Drizzle schema (single source of truth for DB structure)
+- `backend/src/db/schema.js` — Drizzle sqlite-core schema (single source of truth for DB structure)
+- `backend/src/db/index.js` — opens better-sqlite3 at `DATABASE_PATH` and sets modern pragmas (`foreign_keys`, `journal_mode=WAL`, `busy_timeout`, `synchronous=NORMAL`)
 - `backend/src/templates/invoice-html.js` — shared HTML template for both preview and PDF generation
 - `backend/src/services/pdfService.js` — Puppeteer (singleton browser instance, new page per PDF)
 - File storage: signatures in `backend/uploads/`, local fonts in `backend/fonts/`
 
 **Database migration rules**: Always modify `schema.js` and run `drizzle-kit generate` + `drizzle-kit migrate`. Never write raw SQL migration files. Drizzle Kit generates them from schema diffs.
 
-**Extracted columns pattern**: When saving/updating invoices, `ref_no`, `client_name`, `date`, `total_amount` are extracted from `json_data` into indexed columns for search/sort/filter. The full invoice data lives in a `jsonb` column.
+**SQLite specifics**: `foreign_keys` is per-connection and set on open (better-sqlite3 uses one connection). `json_data` uses `text({ mode: 'json' })` so reads return parsed objects. `total_amount` uses NUMERIC affinity so ordering is numeric. Search uses `like` (SQLite `LIKE` is ASCII-case-insensitive), not `ilike`. The DB file lives on the `dbdata` volume as a directory mount (WAL sidecars `-wal`/`-shm`).
+
+**Postgres→SQLite data migration**: `backend/scripts/migrate-pg-to-sqlite.js` (run by the entrypoint when `MIGRATE_FROM_POSTGRES_URL` is set) does a one-time, guarded import. `pg` is a devDependency used only here and by its `node:test`. The old PG migration SQL is preserved at `backend/test/fixtures/pg-migrations/` as the migration-test fixture.
+
+**Extracted columns pattern**: When saving/updating invoices, `ref_no`, `client_name`, `date`, `total_amount` are extracted from `json_data` into indexed columns for search/sort/filter. The full invoice data lives in a `json_data` column (`text` in JSON mode).
 
 ### Frontend: React 19 + Vite 7 + Tailwind CSS 4 + shadcn
 

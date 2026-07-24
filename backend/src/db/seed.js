@@ -11,9 +11,16 @@ const defaultFonts = [
 ];
 
 async function seed() {
+  // Idempotent: skip if fonts already exist (fresh boot after seed, or after a
+  // data import that already populated fonts).
+  const existing = await db.select().from(fonts).limit(1);
+  if (existing.length > 0) {
+    console.log('Fonts already present; skipping seed.');
+    process.exit(0);
+  }
   console.log('Seeding default fonts...');
   for (const font of defaultFonts) {
-    await db.insert(fonts).values(font).onConflictDoNothing();
+    await db.insert(fonts).values(font);
   }
   console.log('Done.');
   process.exit(0);

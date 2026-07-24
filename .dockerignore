@@ -3,6 +3,8 @@ frontend/dist
 backend/node_modules
 backend/uploads/*
 backend/fonts/*
+backend/data
+backend/test
 e2e
 openspec
 .git
