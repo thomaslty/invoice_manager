@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
   Table,
   TableHeader,
@@ -42,7 +42,9 @@ import {
   ArrowDownIcon,
   ArrowUpDownIcon,
   MoreHorizontalIcon,
+  EyeIcon,
   PencilIcon,
+  CopyIcon,
   DownloadIcon,
   CameraIcon,
   TrashIcon,
@@ -80,7 +82,11 @@ function formatCurrency(amount) {
 function formatDate(dateStr) {
   if (!dateStr) return "-";
   try {
-    return format(new Date(dateStr), "MMM d, yyyy");
+    // parseISO, not new Date: `new Date("2026-01-02")` is UTC midnight, which
+    // renders as the previous day in any timezone behind UTC. parseISO reads a
+    // date-only string as local midnight. Anything the backfill could not parse
+    // is still shown as stored.
+    return format(parseISO(dateStr), "MMM d, yyyy");
   } catch {
     return dateStr;
   }
@@ -293,10 +299,22 @@ export default function InvoiceTable() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
+                          onClick={() => navigate(`/invoices/${invoice.id}/view`)}
+                        >
+                          <EyeIcon />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
                         >
                           <PencilIcon />
                           Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => navigate(`/invoices/new?from=${invoice.id}`)}
+                        >
+                          <CopyIcon />
+                          Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => window.open(api.getInvoicePdfUrl(invoice.id), "_blank")}

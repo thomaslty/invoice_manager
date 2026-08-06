@@ -1,9 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import AppLayout from '@/components/layout/AppLayout'
 import DashboardPage from '@/pages/DashboardPage'
-import TemplateListPage from '@/pages/TemplateListPage'
 import InvoiceEditorPage from '@/pages/InvoiceEditorPage'
-import TemplateEditorPage from '@/pages/TemplateEditorPage'
+import InvoiceViewerPage from '@/pages/InvoiceViewerPage'
 import FontManagementPage from '@/pages/FontManagementPage'
 import LoginPage from '@/components/auth/LoginPage'
 import { Toaster } from '@/components/ui/sonner'
@@ -18,11 +17,9 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/templates" element={<TemplateListPage />} />
-          <Route path="/templates/new" element={<TemplateEditorPage />} />
-          <Route path="/templates/:id/edit" element={<TemplateEditorPage />} />
           <Route path="/invoices/new" element={<InvoiceEditorPage />} />
           <Route path="/invoices/:id/edit" element={<InvoiceEditorPage />} />
+          <Route path="/invoices/:id/view" element={<InvoiceViewerPage />} />
           <Route path="/fonts" element={<FontManagementPage />} />
         </Route>
       </Routes>

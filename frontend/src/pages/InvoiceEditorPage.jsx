@@ -1,79 +1,66 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInvoiceForm } from '@/hooks/useInvoiceForm';
-import InvoiceForm from '@/components/invoice/InvoiceForm';
-import InvoicePreview from '@/components/invoice/InvoicePreview';
+import EditorLayout from '@/components/invoice/EditorLayout';
 import { api } from '@/lib/api';
 import { Save, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+/** Strip the fields that must not carry over into a duplicate. */
+function clearedForDuplicate(jsonData) {
+  const fields = jsonData?.sections?.metadata?.fields || {};
+  return {
+    ...jsonData,
+    sections: {
+      ...jsonData.sections,
+      metadata: {
+        ...jsonData.sections.metadata,
+        fields: { ...fields, refNo: '', date: '' },
+      },
+    },
+  };
+}
+
 export default function InvoiceEditorPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const templateId = searchParams.get('template');
+  const duplicateOf = searchParams.get('from');
   const navigate = useNavigate();
 
-  const {
-    formData,
-    setFormData,
-    fontId,
-    setFontId,
-    updateSection,
-    toggleSection,
-    updateMetadataField,
-    addCategory,
-    removeCategory,
-    addItem,
-    removeItem,
-    updateItem,
-    updateCategoryName,
-    reorderItem,
-    setCurrency,
-    grandTotal,
-  } = useInvoiceForm();
+  const invoiceForm = useInvoiceForm();
+  const { formData, setFormData, setFontId, resetForm, isDirty, markPristine, fontId, grandTotal } = invoiceForm;
 
-  const [fonts, setFonts] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch fonts
-  useEffect(() => {
-    api.getFonts().then(setFonts).catch(console.error);
-  }, []);
-
-  // Load existing invoice or template defaults
   useEffect(() => {
     async function loadData() {
+      if (!id && !duplicateOf) return;
       setLoading(true);
       try {
         if (id) {
           const invoice = await api.getInvoice(id);
-          if (invoice.jsonData) {
-            setFormData(invoice.jsonData);
-          }
-          if (invoice.fontId) {
-            setFontId(invoice.fontId);
-          }
-        } else if (templateId) {
-          const template = await api.getTemplate(templateId);
-          if (template.jsonData) {
-            setFormData(template.jsonData);
-          }
-          if (template.fontId) {
-            setFontId(template.fontId);
-          }
+          // resetForm also sets the saved baseline, so Save starts disabled.
+          resetForm(invoice.jsonData, invoice.fontId ?? null);
+        } else {
+          const source = await api.getInvoice(duplicateOf);
+          // A duplicate is unsaved work from the start, so it stays dirty:
+          // set the data without moving the baseline.
+          setFormData(clearedForDuplicate(source.jsonData));
+          setFontId(source.fontId ?? null);
         }
       } catch (err) {
         console.error('Failed to load data:', err);
+        toast.error('Failed to load invoice');
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, [id, templateId, setFormData, setFontId]);
+  }, [id, duplicateOf, resetForm, setFormData, setFontId]);
 
+  /** Returns the saved invoice id, or null when validation or the request failed. */
   const handleSave = async () => {
     const errors = [];
     const meta = formData.sections?.metadata?.fields || {};
@@ -82,96 +69,62 @@ export default function InvoiceEditorPage() {
     if (grandTotal <= 0) errors.push('Grand total must be greater than 0');
     if (errors.length) {
       errors.forEach((msg) => toast.error(msg));
-      return false;
+      return null;
     }
 
     setSaving(true);
     try {
       if (id) {
         await api.updateInvoice(id, { jsonData: formData, fontId });
-      } else {
-        const result = await api.createInvoice({ jsonData: formData, fontId });
-        navigate(`/invoices/${result.id}/edit`, { replace: true });
+        markPristine();
+        toast.success('Invoice saved');
+        return id;
       }
+      const result = await api.createInvoice({ jsonData: formData, fontId });
       toast.success('Invoice saved');
-      return true;
+      // Switching to the edit route reloads the saved invoice, which rebaselines
+      // the form and disables Save again.
+      navigate(`/invoices/${result.id}/edit`, { replace: true });
+      return result.id;
     } catch (err) {
       console.error('Save failed:', err);
       toast.error('Failed to save invoice');
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }
   };
 
   const handleDownloadPdf = async () => {
-    const saved = await handleSave();
-    if (!saved) return;
-    const invoiceId = id || window.location.pathname.match(/\/invoices\/(\d+)\/edit/)?.[1];
-    if (invoiceId) {
-      window.open(api.getInvoicePdfUrl(invoiceId), '_blank');
+    let invoiceId = id;
+    if (!invoiceId || isDirty) {
+      invoiceId = await handleSave();
+      if (!invoiceId) return;
     }
+    window.open(api.getInvoicePdfUrl(invoiceId), '_blank');
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-full">
-      {/* Left panel — Editor */}
-      <div className="w-1/2 flex flex-col border-r border-border min-w-0 min-h-0">
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
-          <h1 className="text-lg font-semibold truncate">
-            {id ? 'Edit Invoice' : 'New Invoice'}
-          </h1>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleSave} disabled={saving} size="sm">
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              ) : (
-                <Save className="h-4 w-4 mr-1.5" />
-              )}
-              Save
-            </Button>
-            {id && (
-              <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-                <Download className="h-4 w-4 mr-1.5" />
-                PDF
-              </Button>
+    <EditorLayout
+      title={id ? 'Edit Invoice' : 'New Invoice'}
+      loading={loading}
+      headerActions={
+        <>
+          <Button onClick={handleSave} disabled={saving || !isDirty} size="sm">
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+            ) : (
+              <Save className="h-4 w-4 mr-1.5" />
             )}
-          </div>
-        </div>
-        <ScrollArea className="flex-1 min-h-0">
-          <InvoiceForm
-            formData={formData}
-            fontId={fontId}
-            setFontId={setFontId}
-            updateSection={updateSection}
-            toggleSection={toggleSection}
-            updateMetadataField={updateMetadataField}
-            addCategory={addCategory}
-            removeCategory={removeCategory}
-            addItem={addItem}
-            removeItem={removeItem}
-            updateItem={updateItem}
-            updateCategoryName={updateCategoryName}
-            reorderItem={reorderItem}
-            setCurrency={setCurrency}
-            grandTotal={grandTotal}
-            fonts={fonts}
-          />
-        </ScrollArea>
-      </div>
-
-      {/* Right panel — Preview */}
-      <div className="w-1/2 min-w-0">
-        <InvoicePreview formData={formData} fontId={fontId} />
-      </div>
-    </div>
+            Save
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+            <Download className="h-4 w-4 mr-1.5" />
+            PDF
+          </Button>
+        </>
+      }
+      {...invoiceForm}
+    />
   );
 }

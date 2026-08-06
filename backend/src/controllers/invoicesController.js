@@ -40,11 +40,11 @@ export async function getById(req, res) {
 }
 
 export async function create(req, res) {
-  const { templateId, fontId, jsonData } = req.body;
+  const { fontId, jsonData } = req.body;
   if (!jsonData) return res.status(400).json({ error: 'jsonData is required' });
   const errors = validateInvoiceData(jsonData);
   if (errors.length) return res.status(400).json({ error: errors.join('; ') });
-  const invoice = await invoiceService.createInvoice({ templateId, fontId, jsonData }, req.user.id);
+  const invoice = await invoiceService.createInvoice({ fontId, jsonData }, req.user.id);
   res.status(201).json(invoice);
 }
 

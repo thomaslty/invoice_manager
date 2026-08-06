@@ -27,13 +27,6 @@ export const api = {
   uploadFont: (formData) => request('/fonts/upload', { method: 'POST', body: formData, headers: {} }),
   deleteFont: (id) => request(`/fonts/${id}`, { method: 'DELETE' }),
 
-  // Templates
-  getTemplates: () => request('/templates'),
-  getTemplate: (id) => request(`/templates/${id}`),
-  createTemplate: (data) => request('/templates', { method: 'POST', body: JSON.stringify(data) }),
-  updateTemplate: (id, data) => request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteTemplate: (id) => request(`/templates/${id}`, { method: 'DELETE' }),
-
   // Invoices
   getInvoices: (params) => request(`/invoices?${new URLSearchParams(params)}`),
   getInvoice: (id) => request(`/invoices/${id}`),

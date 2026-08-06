@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm';
 import fontsRouter from './fonts.js';
-import templatesRouter from './templates.js';
 import invoicesRouter from './invoices.js';
 import snapshotsRouter from './snapshots.js';
 import previewRouter from './preview.js';
@@ -20,7 +19,6 @@ router.get('/health', async (req, res) => {
 });
 
 router.use('/fonts', fontsRouter);
-router.use('/templates', templatesRouter);
 router.use('/invoices', invoicesRouter);
 router.use('/preview', previewRouter);
 router.use('/uploads', uploadsRouter);

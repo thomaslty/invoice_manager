@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 import { api } from '@/lib/api';
 
-export default function SignatureUpload({ signature, onChange }) {
+export default function SignatureUpload({ signature, onChange, readOnly = false }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
@@ -43,6 +43,7 @@ export default function SignatureUpload({ signature, onChange }) {
           value={signature.label}
           onChange={(e) => onChange({ label: e.target.value })}
           placeholder="For and on behalf of"
+          readOnly={readOnly}
         />
       </div>
 
@@ -56,16 +57,18 @@ export default function SignatureUpload({ signature, onChange }) {
               alt="Signature"
               className="h-20 border border-border rounded-md object-contain bg-white p-1"
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleRemoveImage}
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm"
-            >
-              <X className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRemoveImage}
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
           </div>
-        ) : (
+        ) : !readOnly ? (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -75,6 +78,8 @@ export default function SignatureUpload({ signature, onChange }) {
             <Upload className="h-4 w-4" />
             {uploading ? 'Uploading...' : 'Click to upload signature'}
           </button>
+        ) : (
+          <p className="text-sm text-muted-foreground">No signature</p>
         )}
         <input
           ref={fileInputRef}
@@ -94,6 +99,7 @@ export default function SignatureUpload({ signature, onChange }) {
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Signatory name"
           className="font-semibold"
+          readOnly={readOnly}
         />
       </div>
 
@@ -106,6 +112,7 @@ export default function SignatureUpload({ signature, onChange }) {
           onChange={(e) => onChange({ title: e.target.value })}
           placeholder="Position or title"
           className="italic"
+          readOnly={readOnly}
         />
       </div>
     </div>

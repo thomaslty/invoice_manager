@@ -1,6 +1,7 @@
 import { db } from '../db/index.js';
 import { invoices } from '../db/schema.js';
 import { eq, like, or, and, gte, lte, desc, asc } from 'drizzle-orm';
+import { toIsoDate } from '../lib/invoiceDate.js';
 
 function extractFields(jsonData) {
   const meta = jsonData?.sections?.metadata?.fields || {};
@@ -14,7 +15,8 @@ function extractFields(jsonData) {
   return {
     refNo: meta.refNo || null,
     clientName: meta.client || null,
-    date: meta.date || null,
+    // json_data keeps the display string; this column is the ISO sort key.
+    date: toIsoDate(meta.date),
     totalAmount: String(grandTotal),
   };
 }
@@ -56,7 +58,6 @@ export async function createInvoice(data, userId) {
   const extracted = extractFields(data.jsonData);
   const [invoice] = await db.insert(invoices).values({
     userId,
-    templateId: data.templateId || null,
     fontId: data.fontId,
     jsonData: data.jsonData,
     ...extracted,

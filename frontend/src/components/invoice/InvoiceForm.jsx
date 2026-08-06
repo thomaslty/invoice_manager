@@ -19,7 +19,7 @@ import MetadataFields from './MetadataFields';
 import ItemsTable from './ItemsTable';
 import SignatureUpload from './SignatureUpload';
 
-function SectionCard({ title, visible, onToggle, children }) {
+function SectionCard({ title, visible, onToggle, readOnly, children }) {
   return (
     <Collapsible defaultOpen className="rounded-lg border border-border bg-card">
       <div className="px-4 py-3 flex items-center justify-between gap-3">
@@ -27,11 +27,13 @@ function SectionCard({ title, visible, onToggle, children }) {
           <ChevronDown className="h-4 w-4 transition-transform [[data-state=closed]_&]:rotate-[-90deg]" />
           {title}
         </CollapsibleTrigger>
-        <SectionToggle
-          label=""
-          checked={visible}
-          onToggle={onToggle}
-        />
+        {!readOnly && (
+          <SectionToggle
+            label=""
+            checked={visible}
+            onToggle={onToggle}
+          />
+        )}
       </div>
       <CollapsibleContent>
         {visible && (
@@ -59,6 +61,7 @@ export default function InvoiceForm({
   setCurrency,
   grandTotal,
   fonts = [],
+  readOnly = false,
 }) {
   const { sections } = formData;
 
@@ -69,6 +72,7 @@ export default function InvoiceForm({
         title="Header"
         visible={sections.header.visible}
         onToggle={() => toggleSection('header')}
+        readOnly={readOnly}
       >
         <div className="space-y-1.5">
           <Label htmlFor="header-title" className="text-sm">Title</Label>
@@ -78,6 +82,7 @@ export default function InvoiceForm({
             onChange={(e) => updateSection('header', { title: e.target.value })}
             placeholder="INVOICE"
             className="text-lg font-bold"
+            readOnly={readOnly}
           />
         </div>
       </SectionCard>
@@ -87,10 +92,12 @@ export default function InvoiceForm({
         title="Invoice Details"
         visible={sections.metadata.visible}
         onToggle={() => toggleSection('metadata')}
+        readOnly={readOnly}
       >
         <MetadataFields
           fields={sections.metadata.fields}
           onChange={updateMetadataField}
+          readOnly={readOnly}
         />
       </SectionCard>
 
@@ -99,6 +106,7 @@ export default function InvoiceForm({
         title="Line Items"
         visible={sections.items.visible}
         onToggle={() => toggleSection('items')}
+        readOnly={readOnly}
       >
         <ItemsTable
           items={sections.items}
@@ -111,6 +119,7 @@ export default function InvoiceForm({
           onReorderItem={reorderItem}
           onSetCurrency={setCurrency}
           grandTotal={grandTotal}
+          readOnly={readOnly}
         />
       </SectionCard>
 
@@ -119,6 +128,7 @@ export default function InvoiceForm({
         title="Payment Method"
         visible={sections.paymentMethod.visible}
         onToggle={() => toggleSection('paymentMethod')}
+        readOnly={readOnly}
       >
         <div className="space-y-1.5">
           <Label htmlFor="payment-content" className="text-sm">Details</Label>
@@ -128,6 +138,7 @@ export default function InvoiceForm({
             onChange={(e) => updateSection('paymentMethod', { content: e.target.value })}
             placeholder="Bank transfer details, payment instructions..."
             rows={3}
+            readOnly={readOnly}
           />
         </div>
       </SectionCard>
@@ -137,6 +148,7 @@ export default function InvoiceForm({
         title="Terms & Conditions"
         visible={sections.terms.visible}
         onToggle={() => toggleSection('terms')}
+        readOnly={readOnly}
       >
         <div className="space-y-1.5">
           <Label htmlFor="terms-content" className="text-sm">Content</Label>
@@ -146,6 +158,7 @@ export default function InvoiceForm({
             onChange={(e) => updateSection('terms', { content: e.target.value })}
             placeholder="Payment terms, conditions..."
             rows={3}
+            readOnly={readOnly}
           />
         </div>
       </SectionCard>
@@ -155,10 +168,12 @@ export default function InvoiceForm({
         title="Signature"
         visible={sections.signature.visible}
         onToggle={() => toggleSection('signature')}
+        readOnly={readOnly}
       >
         <SignatureUpload
           signature={sections.signature}
           onChange={(data) => updateSection('signature', data)}
+          readOnly={readOnly}
         />
       </SectionCard>
 
@@ -167,6 +182,7 @@ export default function InvoiceForm({
         title="Footer"
         visible={sections.footer.visible}
         onToggle={() => toggleSection('footer')}
+        readOnly={readOnly}
       >
         <div className="space-y-1.5">
           <Label htmlFor="footer-content" className="text-sm">Content</Label>
@@ -175,29 +191,32 @@ export default function InvoiceForm({
             value={sections.footer.content}
             onChange={(e) => updateSection('footer', { content: e.target.value })}
             placeholder="Footer text"
+            readOnly={readOnly}
           />
         </div>
       </SectionCard>
 
       {/* Font Selector */}
-      <div className="rounded-lg border border-border bg-card px-4 py-3 space-y-1.5">
-        <Label className="text-sm font-semibold">Font</Label>
-        <Select
-          value={fontId ? String(fontId) : ''}
-          onValueChange={(val) => setFontId(val ? Number(val) : null)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a font (default)" />
-          </SelectTrigger>
-          <SelectContent>
-            {fonts.map((font) => (
-              <SelectItem key={font.id} value={String(font.id)}>
-                {font.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!readOnly && (
+        <div className="rounded-lg border border-border bg-card px-4 py-3 space-y-1.5">
+          <Label className="text-sm font-semibold">Font</Label>
+          <Select
+            value={fontId ? String(fontId) : ''}
+            onValueChange={(val) => setFontId(val ? Number(val) : null)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a font (default)" />
+            </SelectTrigger>
+            <SelectContent>
+              {fonts.map((font) => (
+                <SelectItem key={font.id} value={String(font.id)}>
+                  {font.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }

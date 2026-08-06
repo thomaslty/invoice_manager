@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 function newItem() {
   return { id: crypto.randomUUID(), description: '', qty: 1, total: 0 };
@@ -57,9 +57,27 @@ const defaultFormData = {
   },
 };
 
+/**
+ * Serialize the whole editable state so it can be compared against the last
+ * saved version. Every updater below spreads the objects it touches, so key
+ * order stays stable and stringify is a fair comparison.
+ */
+function stateKey(formData, fontId) {
+  return JSON.stringify({ formData, fontId: fontId ?? null });
+}
+
 export function useInvoiceForm(initialData = null) {
-  const [formData, _setFormData] = useState(initialData || defaultFormData);
+  const initial = initialData || defaultFormData;
+  const [formData, _setFormData] = useState(initial);
   const [fontId, setFontId] = useState(null);
+  const [pristineKey, setPristineKey] = useState(() => stateKey(initial, null));
+
+  // Kept in sync after every commit so markPristine can read the current values
+  // without needing them as dependencies (which would make it unstable).
+  const latest = useRef({ formData, fontId });
+  useEffect(() => {
+    latest.current = { formData, fontId };
+  }, [formData, fontId]);
 
   const setFormData = useCallback((dataOrFn) => {
     if (typeof dataOrFn === 'function') {
@@ -68,6 +86,28 @@ export function useInvoiceForm(initialData = null) {
       _setFormData(ensureItemIds(dataOrFn));
     }
   }, []);
+
+  /**
+   * Load an invoice and treat it as the saved baseline in one step.
+   *
+   * ensureItemIds hands out fresh crypto.randomUUID() ids to items that have
+   * none, so invoices saved before drag-and-drop change shape the moment they
+   * load. Baselining the processed object here — rather than the raw API
+   * response — is what stops those invoices from looking edited on arrival.
+   */
+  const resetForm = useCallback((data, font = null) => {
+    const processed = ensureItemIds(data);
+    _setFormData(processed);
+    setFontId(font);
+    setPristineKey(stateKey(processed, font));
+  }, []);
+
+  /** Treat the current state as saved. Call after a successful save. */
+  const markPristine = useCallback(() => {
+    setPristineKey(stateKey(latest.current.formData, latest.current.fontId));
+  }, []);
+
+  const isDirty = stateKey(formData, fontId) !== pristineKey;
 
   const updateSection = useCallback((sectionKey, data) => {
     setFormData(prev => ({
@@ -241,6 +281,9 @@ export function useInvoiceForm(initialData = null) {
   return {
     formData,
     setFormData,
+    resetForm,
+    isDirty,
+    markPristine,
     fontId,
     setFontId,
     updateSection,

@@ -64,6 +64,8 @@ Layered architecture: **Routes → Controllers → Services → DB**
 
 **Extracted columns pattern**: When saving/updating invoices, `ref_no`, `client_name`, `date`, `total_amount` are extracted from `json_data` into indexed columns for search/sort/filter. The full invoice data lives in a `json_data` column (`text` in JSON mode).
 
+**Invoice dates**: `json_data` holds the display string the user picked (`30 September, 2022`) and is what the preview and PDF render. The indexed `invoices.date` column holds ISO `YYYY-MM-DD` so SQLite sorts and range-filters it correctly. `backend/src/lib/invoiceDate.js` converts one to the other — use `toIsoDate` anywhere you write that column, never `meta.date` raw. `drizzle/0001_backfill_invoice_date_iso.sql` converts pre-existing rows; it skips anything it cannot read unambiguously and never writes NULL.
+
 ### Frontend: React 19 + Vite 7 + Tailwind CSS 4 + shadcn
 
 - JavaScript only (no TypeScript)
@@ -75,7 +77,8 @@ Layered architecture: **Routes → Controllers → Services → DB**
 
 - ESM package (`"type": "module"`) — `node_modules` is a symlink to `frontend/node_modules`
 - Tests run against `http://localhost:5173` — both frontend and backend must be running
-- Test files: `invoice-editor.spec.js` (7 tests), `fonts.spec.js` (3 tests)
+- 53 tests across `invoice-editor`, `blank-invoice`, `invoice-view-duplicate`, `date-picker`, `date-sorting`, `dirty-save`, `multiline-description`, `user-scoping`, `fonts`, `auth`
+- `helpers.js` holds the shared pieces: `pickDate` drives the calendar popover, `createInvoice` seeds through the API, `saveDisabled` reads the Save button. Use them instead of hand-rolling — the date is a button, so `fill()` on it does nothing.
 
 ### Core Data Flow: Preview & PDF
 
@@ -88,10 +91,11 @@ Both use the identical HTML template function — this guarantees preview matche
 
 ### Data Model
 
-Three core concepts sharing the same JSON schema (`json_data` column):
-- **Template** — reusable skeleton (layout + defaults, no real data)
+Two live concepts sharing the same JSON schema (`json_data` column):
 - **Invoice** — real invoice with actual data
 - **Invoice Snapshot** — full copy of an invoice for cloning/renewal
+
+The `templates` table and `invoices.template_id` are still in `schema.js` but have no code or UI behind them. Dropping a column in SQLite rebuilds the whole `invoices` table, so they stay. To reuse an invoice, use Duplicate (`/invoices/new?from=<id>`), which copies everything except `refNo` and `date`.
 
 The JSON shape has 7 toggleable sections: `header`, `metadata`, `items`, `paymentMethod`, `terms`, `signature`, `footer`. See `docs/plans/2026-03-09-invoice-manager-design.md` for the full schema.
 
@@ -110,8 +114,10 @@ FK ON DELETE policies: snapshots cascade on invoice delete, template_id and font
 - **Preview base URLs**: Preview uses empty `baseUrl` (relative `/uploads/...` resolved by Vite proxy). PDF uses Docker-internal `baseUrl`. Never mix them — browser can't reach `http://backend:3000`.
 - **Duplicate toasts in tests**: Actions like save-then-PDF produce multiple "Invoice saved" toasts. Use `.first()` in Playwright assertions.
 - **DnD kit IDs**: Items need stable `crypto.randomUUID()` IDs, not index-based keys. Use `CSS.Translate` (not `CSS.Transform`) to avoid bounce-back from scale factors.
+- **ISO dates in the browser**: `new Date("2026-01-02")` is UTC midnight and renders as the previous day anywhere behind UTC. Use `parseISO` from date-fns for the `invoices.date` column, like `formatDate` in `InvoiceTable.jsx`.
+- **Dirty tracking baseline**: `ensureItemIds` hands fresh IDs to items that have none, so an invoice saved before drag-and-drop changes shape as it loads. Baseline from the processed form via `resetForm`, never from the raw API response, or old invoices look edited on arrival.
+- **`/fonts` collides with the Vite proxy**: `/fonts` is proxied to the backend, so a hard load of `http://localhost:5173/fonts` hits Express instead of the SPA. Reach the page by clicking the sidebar link (react-router handles it client-side); in Playwright, click rather than `goto`.
 
 ## Hidden UI (commented out, not removed)
 
-- Templates sidebar nav item (`components/layout/Sidebar.jsx`)
 - "Save as Snapshot" and "View Snapshots" in invoice dropdown (`components/dashboard/InvoiceTable.jsx`)

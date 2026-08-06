@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
+import { pickDate } from './helpers.js';
 
 const BASE = 'http://localhost:5173';
 
@@ -8,8 +9,8 @@ test.describe('Invoice Editor', () => {
   test('fill form with multi-category items and verify preview', async ({ page }) => {
     await page.goto(`${BASE}/invoices/new`);
 
-    // Fill metadata
-    await page.getByRole('textbox', { name: 'Date' }).fill('30 Sep, 2022');
+    // Fill metadata. The date is a calendar picker, not a text field.
+    await pickDate(page, 15);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('Inv-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('NextStation');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tom');
@@ -204,7 +205,12 @@ test.describe('Invoice Editor', () => {
   test('validation errors prevent saving invalid invoice', async ({ page }) => {
     await page.goto(`${BASE}/invoices/new`);
 
-    // Click save with no data
+    // Save stays disabled until something changes, so an untouched blank invoice
+    // cannot even be attempted. Touch one field to get past that.
+    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await page.getByRole('textbox', { name: 'Job Title' }).fill('Nothing else filled in');
+
+    // Click save with the required fields still empty
     await page.getByRole('button', { name: 'Save' }).click();
 
     // Verify error toasts appear

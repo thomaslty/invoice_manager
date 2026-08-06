@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { pickDate } from './helpers.js';
 
 const BASE = 'http://localhost:5173';
 
@@ -7,7 +8,7 @@ test.describe('User scoping and data ownership', () => {
     await page.goto(`${BASE}/invoices/new`);
 
     // Fill required metadata
-    await page.getByRole('textbox', { name: 'Date' }).fill('01 Jan, 2026');
+    await pickDate(page, 1);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('SCOPE-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('Scoping Test Client');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tester');
@@ -31,7 +32,7 @@ test.describe('User scoping and data ownership', () => {
   test('edit invoice from dashboard, verify change persists', async ({ page }) => {
     // Create an invoice first
     await page.goto(`${BASE}/invoices/new`);
-    await page.getByRole('textbox', { name: 'Date' }).fill('02 Jan, 2026');
+    await pickDate(page, 2);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('EDIT-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('Edit Client');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tester');
@@ -62,7 +63,7 @@ test.describe('User scoping and data ownership', () => {
   test('delete invoice from dashboard, removed from list', async ({ page }) => {
     // Create an invoice first
     await page.goto(`${BASE}/invoices/new`);
-    await page.getByRole('textbox', { name: 'Date' }).fill('03 Jan, 2026');
+    await pickDate(page, 3);
     await page.getByRole('textbox', { name: 'Reference No.' }).fill('DEL-001');
     await page.getByRole('textbox', { name: 'Client' }).fill('Delete Client');
     await page.getByRole('textbox', { name: 'Contact Person' }).fill('Tester');
@@ -123,7 +124,7 @@ test.describe('User scoping and data ownership', () => {
     await dialog.getByRole('button', { name: /add font/i }).click();
 
     // Verify font appears
-    await expect(page.getByText('Playfair Display')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Playfair Display').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('DELETE /api/fonts/:id for system font returns 403', async ({ request }) => {
